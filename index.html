@@ -835,31 +835,25 @@
         binding: ltvLoan <= incomeLoan ? 'LTV' : incomeRule };
     }
 
-    // ----- Max affordability: highest price the loan + CPF + cash can cover -----
+    // ----- Max affordability -----
+    // Starts from the loan: the price at which the max loan is exactly the LTV limit (75%), with the
+    // client funding the downpayment. Cash on hand does not cap it — any shortfall shows as a top-up.
+    // If CPF + cash cover more than that downpayment, the price can go higher (all money counted together).
     let budget = null;
     if (income > 0 || poolStart > 0 || cashAvail > 0) {
-      let lo = 0, hi = incomeLoan + poolStart + Math.max(0, cashAvail) + 1;
-      const ok = P => { const f = fund(P, P, poolStart); return f.cashNeeded <= cashAvail + 0.5 && f.cashDown <= downCap + 0.5; };
-      if (ok(0)) {
-        // Cash needed isn't always rising with price (the 2nd HDB loan rule forces a fixed sum in),
-        // so step down from the top to the highest price that works, then refine.
-        const step = Math.max(1000, Math.ceil(hi / 600 / 1000) * 1000);
-        let top = Math.floor(hi / step) * step;
-        while (top > 0 && !ok(top)) top -= step;
-        lo = top; hi = top + step;
-        for (let k = 0; k < 30; k++) { const mid = (lo + hi) / 2; if (ok(mid)) lo = mid; else hi = mid; }
-        // Exact to the dollar: rounding down would leave spare required cash that the 2nd HDB loan rule takes off the loan.
-        const maxPrice = Math.floor(lo);
-        const f = fund(maxPrice, maxPrice, poolStart);
-        const cpfIdle = f.poolLeft;
-        const cashBound = f.cashNeeded >= cashAvail - 1000;
-        const limit = cpfIdle > 1000 && f.minCash > 0 && cashBound ? 'mincash'
-          : downCap < Infinity && f.cashDown >= downCap - 1000 ? 'downcap' : cashBound ? 'cash' : 'all';
-        const nudge = fund(maxPrice + 10000, maxPrice + 10000, poolStart);
-        const cashPer10k = nudge.cashNeeded - f.cashNeeded;
-        const pricePerK = cashPer10k > 0 ? 1000 * 10000 / cashPer10k : 0;
-        budget = { maxPrice, f, cpfIdle, limit, pricePerK };
-      } else budget = { maxPrice: 0, f: fund(0, 0, poolStart), cpfIdle: poolStart, limit: 'fees' };
+      const pLoan = ltv > 0 ? Math.floor(incomeLoanR / ltv) : 0;
+      const money_ = poolStart + Math.max(0, cashAvail);
+      const covers = P => { const f = fund(P, P, poolStart); return Math.min(f.maxLoan, incomeLoanR) + money_ >= P + f.fees; };
+      let lo = 0, hi = incomeLoan + money_ + 1;
+      if (covers(0)) {
+        for (let k = 0; k < 50; k++) { const mid = (lo + hi) / 2; if (covers(mid)) lo = mid; else hi = mid; }
+      }
+      const pFunds = Math.floor(lo);
+      const maxPrice = Math.max(pLoan, pFunds);
+      const f = fund(maxPrice, maxPrice, poolStart);
+      const topUp = Math.max(0, f.cashNeeded - cashAvail, f.cashDown - downCap);
+      const limit = pLoan >= pFunds ? 'loan' : 'funds';
+      budget = { maxPrice, f, cpfIdle: f.poolLeft, limit, topUp, pLoan, pFunds };
     }
 
     // ----- At the entered price -----
@@ -929,7 +923,7 @@
     if (leaseFactor < 1 && agesKnown) flags.push(['warn', leaseFactor === 0
       ? 'A remaining lease under 20 years cannot be paid for with CPF.'
       : `The lease doesn't cover the youngest buyer to age 95, so CPF use is capped at ${pct(leaseFactor, 0)} of the value${hdbLoan ? ' and the HDB loan is pro-rated to ' + pct(ltv, 1) : ''}.`]);
-    if (budget && budget.limit === 'mincash' && budget.cpfIdle > 1000) flags.push(['warn', `Cash is the limit, not CPF: ${money(budget.cpfIdle)} of CPF sits unused because at least ${pct(minCashPct, 0)} of the price, plus agent and other fees, must be paid in cash.`]);
+    if (budget && budget.topUp > 0.5) flags.push(['warn', `At the max price the client needs <b>${money(budget.topUp)}</b> more cash: at least ${pct(minCashPct, 0)} of the price, plus fees CPF can't pay, must be in cash. CPF can't stand in for it.`]);
     if (at && at.cov > 0) flags.push(['info', `The price is ${money(at.cov)} above valuation. The loan uses the valuation, and the difference must be paid in cash.`]);
     if (at && at.ABSDamt > 0) {
       if (absdRefund) flags.push(['info', `ABSD of <b>${money(at.ABSDamt)}</b> must be paid within 14 days. It's refunded if the first home is sold within 6 months of completing this purchase (or of TOP, for a new launch).`]);
@@ -1047,19 +1041,16 @@
     // 3. Max affordability
     if (c.budget) {
       const b = c.budget, f = b.f;
-      const limitTxt = b.limit === 'mincash' ? `Limited by cash — ${pct(c.minCashPct, 0)} of price must be cash`
-        : b.limit === 'downcap' ? `Loan + CPF + ${money(c.downCap)} cash to use · fees paid in cash on top`
-        : b.limit === 'cash' ? 'Limited by cash — downpayment plus fees uses all her cash'
-        : b.limit === 'fees' ? 'Not enough cash for the fees'
-        : `All loan, CPF and cash used · loan capped by ${f.binding === 'LTV' ? `LTV (${pct(c.ltv, 0)})` : 'income'}`;
+      const limitTxt = b.limit === 'loan'
+        ? `Loan of ${money(f.loan)} is ${pct(c.ltv, 0)} of this price — the client funds the ${pct(1 - c.ltv, 0)} downpayment`
+        : `Loan plus all of the client's CPF and cash`;
       html += `<div class="card budget"><div class="card-head"><span>Max affordability</span><em>${typeLbl}</em><button type="button" class="card-export" data-export="afford" title="Export this section as a PDF">Export</button></div>
         <div class="hero"><div class="big">${money(b.maxPrice)}</div><div class="why">${limitTxt}${c.absdRate ? ` · after ${pct(c.absdRate, 0)} ABSD` : ''}</div></div>
         <table class="rows">
           ${row(c.hdbLoan ? 'HDB loan' : 'Bank loan', money(f.loan))}
           ${row('Downpayment', money(f.D), '', `CPF ${money(f.cpfDown)} + cash ${money(f.cashDown)}`)}
           ${row('Stamp duty and fees on top', money(f.fees), 'minor', f.cpfFees > 0.5 ? `CPF ${money(f.cpfFees)} + cash ${money(f.cashFees)}` : 'All in cash')}
-          ${b.limit === 'mincash' ? row('CPF she can\u2019t use', money(b.cpfIdle), 'hl', `At least ${pct(c.minCashPct, 0)} of the price must be cash — CPF can\u2019t replace it. Each extra $1,000 of cash raises the max price by about ${money(b.pricePerK)}`) : ''}
-          ${b.limit === 'mincash' && c.at && c.at.maxLoan > f.loan + 1000 ? row('Why not the full loan?', '', 'minor', `Income supports ${money(c.incomeLoanR)}, but the loan is ${pct(c.ltv, 0)} of the price — and the price is capped by her cash`) : ''}
+          ${b.topUp > 0.5 ? row('Cash top-up needed', money(b.topUp), 'total hl', `Cash needed ${money(f.cashNeeded)} (incl. at least ${pct(c.minCashPct, 0)} of the price in cash) vs ${money(c.cashAvail)} available`) : row('Cash left over', money(c.cashAvail - f.cashNeeded), 'total good', `Of ${money(c.cashAvail)}`)}
         </table>
         ${more('budget', `
           ${row('CPF OA', money(f.cpfUsed), '', c.sale && c.sale.cpfBack ? `Incl. ${money(c.sale.cpfBack)} sale refund` : '')}
@@ -1203,12 +1194,12 @@
       const f = b.f;
       const cpfNote = [s && s.cpfBack ? `refund ${money(s.cpfBack)}` : '', c.oaTotal ? `existing OA ${money(c.oaTotal)}` : '', c.grants ? `grants ${money(c.grants)}` : ''].filter(Boolean).join(' + ');
       afford = `<div class="rp-answer"><div><div class="k">Max purchase price</div><div class="v">${money(b.maxPrice)}</div></div>
-        <p>${c.hdbLoan ? 'An HDB' : 'A bank'} loan of <b>${money(f.loan)}</b>, <b>${money(f.cpfUsed)}</b> of CPF and <b>${money(f.cashNeeded)}</b> of cash
-        cover this price plus <b>${money(f.fees)}</b> of stamp duty and fees.</p></div>
+        <p>${c.hdbLoan ? 'An HDB' : 'A bank'} loan of <b>${money(f.loan)}</b> (${pct(f.loan / Math.max(1, b.maxPrice), 0)} of the price), <b>${money(f.cpfUsed)}</b> of CPF and <b>${money(f.cashNeeded)}</b> of cash
+        cover this price plus <b>${money(f.fees)}</b> of stamp duty and fees.${b.topUp > 0.5 ? ` The client needs to top up <b>${money(b.topUp)}</b> of cash.` : ''}</p></div>
         ${sec('Money for the next home', `
           ${L(c.hdbLoan ? 'HDB loan' : 'Bank loan', money(f.loan), '', `${c.incomeRule === 'MSR' ? 'MSR 30%' : 'TDSR 55%'} at ${c.stress}% · ${yrs(c.tenure)}`)}
           ${L('CPF OA', money(f.cpfUsed), '', cpfNote)}
-          ${L('Cash', money(f.cashNeeded), '', `of ${money(c.cashAvail)}: ${cashSrc(c)}`)}
+          ${L('Cash', money(f.cashNeeded), '', b.topUp > 0.5 ? `${money(c.cashAvail)} available + ${money(b.topUp)} top-up` : `of ${money(c.cashAvail)}: ${cashSrc(c)}`)}
           ${L('Total funds', money(f.loan + f.cpfUsed + f.cashNeeded), 'tot')}`)}
         ${sec('Max purchase price', `
           ${L('Total funds', money(f.loan + f.cpfUsed + f.cashNeeded))}
@@ -1221,7 +1212,7 @@
           ${c.otherBuy ? L('Less other costs', neg(c.otherBuy)) : ''}
           ${f.levy ? L('Less HDB resale levy', neg(f.levy), '', 'second subsidised home') : ''}
           ${L('Max purchase price', money(b.maxPrice), 'tot big purple')}
-          ${b.limit === 'mincash' ? L('CPF that can\u2019t be used', money(b.cpfIdle), 'sub', `at least ${pct(c.minCashPct, 0)} of the price must be cash · each extra $1,000 of cash adds about ${money(b.pricePerK)}`) : ''}`)}`;
+          ${b.topUp > 0.5 ? L('Cash top-up needed', money(b.topUp), 'tot bad', `cash needed ${money(f.cashNeeded)} vs ${money(c.cashAvail)} available`) : ''}`)}`;
     }
 
     // --- Sale of current home
