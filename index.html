@@ -197,16 +197,31 @@
   .more.notes { padding: 0; }
   .more.notes > summary { background: var(--card); box-shadow: var(--shadow); }
   .more.notes .flags { margin-top: 4px; }
-  .tl { list-style: none; margin: 0; padding: 4px 0; border-top: 1px solid #f1f2f0; }
+  .tl-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 14px 16px 12px; }
+  .tl-stats > div { padding: 10px 11px; border-radius: 10px; background: #f6f4ee; border: 1px solid #ebe7dc; min-width: 0; }
+  .tl-stats span { display: block; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; line-height: 1.3; }
+  .tl-stats b { display: block; font-size: 19px; font-weight: 800; letter-spacing: -0.02em; margin: 4px 0 1px; font-variant-numeric: tabular-nums; }
+  .tl-stats small { display: block; font-size: 11px; color: var(--muted); line-height: 1.3; }
+  .tl-stats .hi { background: var(--plum-soft); border-color: #dcd6ee; }
+  .tl-stats .hi span, .tl-stats .hi b { color: var(--plum); }
+  .tl-stats .hi { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 10px; }
+  .tl-stats .hi span { flex: 1 0 100%; }
+  @media (max-width: 520px) { .tl-stats b { font-size: 17px; } }
+  .tl { list-style: none; margin: 0; padding: 0 0 4px; border-top: 1px solid #f1f2f0; }
   .tl li { display: grid; grid-template-columns: 24px 1fr auto; gap: 10px; align-items: start; padding: 10px 16px; border-bottom: 1px solid #f1f2f0; }
+  .tl li.ph { display: block; padding: 12px 16px 6px; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; color: var(--buy); background: #fbf8f1; border-bottom: 1px solid #e9e1cf; }
+  .tl li.top { background: #fbf6ea; box-shadow: inset 3px 0 0 var(--buy); }
   .tl li:last-child { border-bottom: 0; }
   .tl i { font-style: normal; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line); color: var(--muted); display: grid; place-items: center; font-size: 11px; font-weight: 700; margin-top: 1px; }
   .tl li.pay i { background: var(--sale); border-color: var(--sale); color: #fff; }
+  .tl-e { min-width: 0; }
   .tl-e b { display: block; font-size: 14px; font-weight: 600; }
-  .tl-e small, .tl-a small { display: block; color: var(--faint); font-size: 12px; line-height: 1.35; margin-top: 1px; }
-  .tl-d { display: block; font-size: 12px; font-weight: 700; color: var(--sale); letter-spacing: .01em; }
-  .tl-a { text-align: right; white-space: nowrap; }
-  .tl-a b { display: block; font-size: 14px; }
+  .tl-e small, .tl-a small { display: block; color: var(--muted); font-size: 12px; line-height: 1.35; margin-top: 2px; }
+  .tl-d { font-weight: 700; color: var(--sale); }
+  .tl-a { text-align: right; }
+  .tl-a small { white-space: nowrap; }
+  .tl-a b { display: block; font-size: 14px; white-space: nowrap; }
+  .tl-a em { display: block; font-style: normal; font-weight: 700; font-size: 12.5px; color: var(--plum); margin-top: 2px; white-space: nowrap; }
   .ways { padding: 12px 16px 4px; border-top: 1px solid #f1f2f0; background: #fffaf0; }
   .ways .block-title { margin-bottom: 6px; }
   .ways ul { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.5; }
@@ -1177,15 +1192,24 @@
     // 5. New launch: rough payment timeline
     const sch = schedule(c);
     if (sch) {
+      const lend = c.hdbLoan ? 'HDB loan' : 'Bank loan';
+      const li = (x, i) => {
+        const [share, ...rest] = x.tag ? x.tag.split(' · ') : ['', ''];
+        const payer = x.bank && x.you ? `client ${money(x.you)}<br>+ loan ${money(x.bank)}` : x.bank ? lend : rest.join(' · ');
+        return `<li class="${x.amt ? 'pay' : ''}${x.ev.startsWith('TOP') ? ' top' : ''}"><i>${i + 1}</i>
+          <div class="tl-e"><b>${x.ev}</b><small>${x.d ? `<span class="tl-d">${x.dateLbl}</span> · ${x.when}` : x.when}</small>${x.note ? `<small>${x.note}</small>` : ''}</div>
+          <div class="tl-a">${x.amt ? `<b>${money(x.amt)}</b><small>${x.ev === 'Stamp duty' ? '' : `${share} · `}${payer}</small>` : ''}${x.bank ? `<em>${money(x.inst)}/mth</em>` : ''}</div></li>`;
+      };
       html += `<div class="card cost"><div class="card-head"><span>Payment timeline</span><em>New launch · rough</em><button type="button" class="card-export" data-export="timeline" title="Export this section as a PDF">Export</button></div>
-        <table class="rows">
-          ${row('Paid before the loan starts', money(sch.beforeLoan), 'total', `Downpayment ${money(c.at.D)} + stamp duty${sch.firstLoan ? ` · loan starts ${sch.firstLoan.d ? `~ ${fmtMonth(sch.firstLoan.d)}` : `at the ${sch.firstLoan.ev.toLowerCase()} stage`}` : ''}`)}
-          ${row('Instalment at TOP', money(sch.instTop), '', sch.top ? `~ ${fmtMonth(sch.top)}` : 'Once 85% of the price is paid')}
-          ${row('Full instalment', money(sch.instFull), 'total', `After CSC${sch.csc ? `, ~ ${fmtMonth(sch.csc)}` : ''} · ${money(c.at.loan)} at ${c.rate}%`)}
-        </table>
-        <ol class="tl">${sch.steps.map((x, i) => `<li class="${x.amt ? 'pay' : ''}"><i>${i + 1}</i>
-          <div class="tl-e"><span class="tl-d">${x.dateLbl}</span><b>${x.ev}</b>${x.sub ? `<small>${x.sub}</small>` : ''}</div>
-          <div class="tl-a">${x.amt ? `<small>${x.tag}</small><b>${money(x.amt)}</b>` : ''}</div></li>`).join('')}</ol>
+        <div class="tl-stats">
+          <div><span>Paid before the loan starts</span><b>${money(sch.beforeLoan)}</b><small>Downpayment + stamp duty</small></div>
+          <div><span>Instalment at TOP</span><b>${money(sch.instTop)}</b><small>${sch.top ? `~ ${fmtMonth(sch.top)}` : '85% of the price paid'}</small></div>
+          <div class="hi"><span>Full monthly instalment</span><b>${money(sch.instFull)}</b><small>After CSC · ${money(c.at.loan)} at ${c.rate}%</small></div>
+        </div>
+        <ol class="tl">
+          <li class="ph">Before construction</li>${sch.steps.slice(0, 4).map(li).join('')}
+          <li class="ph">During construction — timing is rough</li>${sch.steps.slice(4).map((x, i) => li(x, i + 4)).join('')}
+        </ol>
         <p class="fine" style="padding:0 16px 14px">Construction timing is a rough estimate. Actual progress depends on the developer. Legal fees are paid to the lawyer in stages.</p>
       </div>`;
     }
