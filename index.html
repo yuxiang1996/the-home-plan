@@ -376,8 +376,9 @@
   const BSD_BANDS = [[180000, 0.01], [180000, 0.02], [640000, 0.03], [500000, 0.04], [1500000, 0.05], [Infinity, 0.06]];
   const LEGAL = 2000, LEGAL_HDB = 1000; // private lawyer; HDB conveyancing (no bank loan involved)
   const VAL_FEE = 0;
-  // HDB sale: resale application fee ($80) plus misc (caveat, admin) — shown as one figure.
+  // HDB resale: application fee ($80) plus misc (caveat, admin), paid by the seller and again by the buyer — one figure each.
   const HDB_SALE_MISC = 80 + 150;
+  const HDB_BUY_MISC = 80 + 150;
   // Shown on every PDF (CEA requires the salesperson's registration and the agency's licence).
   const AGENT = { name: 'Kenn Kwang', full: 'Kwang Yu Xiang', cea: 'R070212H', agency: 'Huttons Asia Pte Ltd', licence: 'L3008899K', phone: '+65 9720 7289' };
   // HDB resale levy on a second subsidised home, by the first subsidised flat sold (on or after 3 Mar 2006).
@@ -781,6 +782,7 @@
     const cashAvail = cashUseIn == null ? cashDefault : Math.max(cashDefault, downCap);
     const legalBuy = s.legal != null ? num(s.legal) : buyLegalDefault();
     const otherBuy = num(s.other);
+    const miscBuy = hdb ? HDB_BUY_MISC : 0; // cash
     // Resale levy: only a new EC in this calculator is a second subsidised home. Cash only.
     const levyAuto = LEVY[s.levyType] * (s.levySingle ? 0.5 : 1);
     const levyCase = ec || (hdb && num(s.grants) > 0 && !s.grantPHG);
@@ -830,10 +832,10 @@
       D = P - loan;
       const mortgageDuty = loan > 0 ? Math.min(500, Math.floor(loan * 0.004)) : 0;
       const cashDown = D - cpfDown;
-      const cashFees = (cpfPayable - cpfFees) + agentBuy + valFee + mortgageDuty + otherBuy + levy;
+      const cashFees = (cpfPayable - cpfFees) + agentBuy + valFee + mortgageDuty + otherBuy + levy + miscBuy;
       const cashNeeded = cashDown + cashFees;
-      const fees = BSD + ABSDamt + legalBuy + agentBuy + valFee + mortgageDuty + otherBuy + levy;
-      return { P, V, base, cov, ltvLoan, maxLoan, BSD, ABSDamt, agentBuy, valFee, mortgageDuty, levy, loan, D, minCash, cpfDown, cpfFees,
+      const fees = BSD + ABSDamt + legalBuy + agentBuy + valFee + mortgageDuty + otherBuy + levy + miscBuy;
+      return { P, V, base, cov, ltvLoan, maxLoan, BSD, ABSDamt, agentBuy, valFee, mortgageDuty, levy, miscBuy, loan, D, minCash, cpfDown, cpfFees,
         cpfUsed: cpfDown + cpfFees, cashDown, cashFees, cashNeeded, poolLeft: pool, hdbCut, cashCut, fees, totalCost: P + fees,
         binding: ltvLoan <= incomeLoan ? 'LTV' : incomeRule };
     }
@@ -1032,6 +1034,7 @@
           ${c.fresh ? '' : row("Buyer's agent fee", money(-f.agentBuy), '', '1% + 9% GST')}
           ${f.valFee ? row('Valuation fee', money(-f.valFee)) : ''}
           ${row('Mortgage stamp duty', money(-f.mortgageDuty), '', '0.4% of loan, max $500')}
+          ${f.miscBuy ? row('HDB resale and misc fees', money(-f.miscBuy), '', 'Resale application $80 + misc $150') : ''}
           ${c.otherBuy ? row('Other costs', money(-c.otherBuy)) : ''}
           ${f.levy ? row('HDB resale levy', money(-f.levy), 'hl', 'Cash only') : ''}
           ${row('Max purchase price', money(b.maxPrice), 'total')}
@@ -1102,6 +1105,7 @@
           ${c.fresh ? '' : row("Buyer's agent fee", money(at.agentBuy), '', '1% + 9% GST · cash only')}
           ${at.valFee ? row('Valuation fee', money(at.valFee), '', 'Cash only') : ''}
           ${row('Mortgage stamp duty', money(at.mortgageDuty), '', '0.4% of loan, max $500 · CPF or cash')}
+          ${at.miscBuy ? row('HDB resale and misc fees', money(at.miscBuy), '', 'Resale application $80 + misc $150 · cash') : ''}
           ${c.otherBuy ? row('Other costs', money(c.otherBuy), '', 'Cash only') : ''}
           ${at.levy ? row('HDB resale levy', money(at.levy), 'hl', 'Second subsidised home · cash only') : ''}
           ${row('Total fees', money(at.fees), 'total')}
@@ -1214,6 +1218,7 @@
           ${c.fresh ? '' : L("Less buyer's agent fee", neg(f.agentBuy), '', '1% + 9% GST')}
           ${f.valFee ? L('Less valuation fee', neg(f.valFee)) : ''}
           ${L('Less mortgage stamp duty', neg(f.mortgageDuty), '', '0.4% of loan, max $500')}
+          ${f.miscBuy ? L('Less HDB resale and misc fees', neg(f.miscBuy), '', 'resale application $80 + misc $150') : ''}
           ${c.otherBuy ? L('Less other costs', neg(c.otherBuy)) : ''}
           ${f.levy ? L('Less HDB resale levy', neg(f.levy), '', 'second subsidised home') : ''}
           ${L('Max purchase price', money(b.maxPrice), 'tot big purple')}
@@ -1252,7 +1257,7 @@
         ${L('paid by CPF', money(at.cpfDown), 'sub')}
         ${L('paid by cash', money(at.cashDown), 'sub', at.cov ? `incl. ${money(at.cov)} above valuation` : '')}
         ${gap}
-        ${L('Stamp duty and fees', money(at.fees), '', [`BSD ${money(at.BSD)}`, at.ABSDamt ? `ABSD ${money(at.ABSDamt)}` : '', `legal ${money(c.legalBuy)}`, c.fresh ? '' : `agent ${money(at.agentBuy)}`, at.levy ? `levy ${money(at.levy)}` : ''].filter(Boolean).join(' · '))}
+        ${L('Stamp duty and fees', money(at.fees), '', [`BSD ${money(at.BSD)}`, at.ABSDamt ? `ABSD ${money(at.ABSDamt)}` : '', `legal ${money(c.legalBuy)}`, c.fresh ? '' : `agent ${money(at.agentBuy)}`, at.miscBuy ? `HDB resale and misc ${money(at.miscBuy)}` : '', at.levy ? `levy ${money(at.levy)}` : ''].filter(Boolean).join(' · '))}
         ${at.cpfFees > 0.5 ? L('paid by CPF', money(at.cpfFees), 'sub') + L('paid by cash', money(at.cashFees), 'sub') : L('all paid in cash', '', 'sub')}
         ${gap}
         ${L('Total cash needed', money(at.cashNeeded), 'tot', 'downpayment + fees')}
