@@ -1190,39 +1190,42 @@
       ${!c.hdbLoan && (c.otherDebt + c.otherProp) ? L('Less other debts and home loans', neg(c.otherDebt + c.otherProp)) : ''}
       ${L('Max monthly instalment', money(Math.max(0, c.allowance)), 'tot', !c.hdbLoan && c.useMSR ? 'lower of MSR and TDSR' : (c.hdbLoan || c.useMSR) ? 'MSR' : 'TDSR (private property)')}
       ${L('Loan this repays', money(c.incomeLoanR), 'tot big', `at ${c.stress}% stress test over ${yrs(c.tenure)}`)}
-      ${at ? L('Loan by LTV at this price', money(at.ltvLoan), '', `${pct(c.ltv, 1)} of ${at.cov ? 'valuation' : money(at.P)}`) : L('Loan-to-value limit', pct(c.ltv, 1), '', c.hdbLoan ? 'HDB loan' : c.lowTier ? 'lower tier — tenure or age' : 'first housing loan')}
-      ${at ? L('Max loan (the lower)', money(at.maxLoan), 'tot', at.binding === 'LTV' ? 'LTV limit' : 'income limit') : ''}
+      ${L('Loan-to-value limit', pct(c.ltv, 0), '', c.hdbLoan ? 'HDB loan' : c.loansOut ? 'with an outstanding home loan' : c.lowTier ? 'lower tier — tenure or age' : 'first housing loan')}
+      ${c.ltv > 0 ? L('Max purchase price this loan supports', money(Math.floor(c.incomeLoanR / c.ltv)), 'tot', `loan is ${pct(c.ltv, 0)} of the price · client funds the ${pct(1 - c.ltv, 0)} downpayment`) : ''}
       ${gap}
-      ${L('Monthly instalment', money(c.inst), 'big', `${money(at ? at.loan : c.incomeLoanR)} at ${c.rate}%${c.hdbLoan ? ' fixed' : ''} over ${yrs(c.tenure)}`)}
-      ${L('At the stress-test rate', money(c.instStress), 'sub', `${c.stress}% · ${c.hdbLoan ? `MSR ${pct(c.msrUsed)} of 30%` : `TDSR ${pct(c.tdsrUsed)} of 55%`}`)}
+      ${L('Monthly instalment', money(pmt(c.rate, c.tenure, c.incomeLoanR)), 'big', `${money(c.incomeLoanR)} at ${c.rate}%${c.hdbLoan ? ' fixed' : ''} over ${yrs(c.tenure)}`)}
+      ${L('At the stress-test rate', money(pmt(c.stress, c.tenure, c.incomeLoanR)), 'sub', `${c.stress}% — what the ${c.hdbLoan || c.incomeRule === 'MSR' ? 'MSR' : 'TDSR'} test uses`)}
       ${L('Loan tenure', yrs(c.tenure), 'sub', c.agesKnown ? `${state.n > 1 ? 'income-weighted' : 'buyer'} age ${c.iwaa.toFixed(1)}` : '')}`);
 
-    // --- Max affordability
+    // --- Max affordability: the loan they can get, provided they put up the downpayment and fees for this price
     let afford = '';
     if (b) {
-      const f = b.f;
-      const cpfNote = [s && s.cpfBack ? `refund ${money(s.cpfBack)}` : '', c.oaTotal ? `existing OA ${money(c.oaTotal)}` : '', c.grants ? `grants ${money(c.grants)}` : ''].filter(Boolean).join(' + ');
-      afford = `<div class="rp-answer"><div><div class="k">Max purchase price</div><div class="v">${money(b.maxPrice)}</div></div>
-        <p>${c.hdbLoan ? 'An HDB' : 'A bank'} loan of <b>${money(f.loan)}</b> (${pct(f.loan / Math.max(1, b.maxPrice), 0)} of the price), <b>${money(f.cpfUsed)}</b> of CPF and <b>${money(f.cashNeeded)}</b> of cash
-        cover this price plus <b>${money(f.fees)}</b> of stamp duty and fees.${b.topUp > 0.5 ? ` The client needs to top up <b>${money(b.topUp)}</b> of cash.` : ''}</p></div>
-        ${sec('Money for the next home', `
-          ${L(c.hdbLoan ? 'HDB loan' : 'Bank loan', money(f.loan), '', `${c.incomeRule === 'MSR' ? 'MSR 30%' : 'TDSR 55%'} at ${c.stress}% · ${yrs(c.tenure)}`)}
-          ${L('CPF OA', money(f.cpfUsed), '', cpfNote)}
-          ${L('Cash', money(f.cashNeeded), '', b.topUp > 0.5 ? `${money(c.cashAvail)} available + ${money(b.topUp)} top-up` : `of ${money(c.cashAvail)}: ${cashSrc(c)}`)}
-          ${L('Total funds', money(f.loan + f.cpfUsed + f.cashNeeded), 'tot')}`)}
-        ${sec('Max purchase price', `
-          ${L('Total funds', money(f.loan + f.cpfUsed + f.cashNeeded))}
-          ${L("Less buyer's stamp duty", neg(f.BSD))}
-          ${f.ABSDamt ? L("Less additional buyer's stamp duty", neg(f.ABSDamt), '', `${pct(c.absdRate, 0)}${c.absdRefund ? ', refundable' : ''}`) : ''}
-          ${L('Less legal fees', neg(c.legalBuy))}
-          ${c.fresh ? '' : L("Less buyer's agent fee", neg(f.agentBuy), '', '1% + 9% GST')}
-          ${f.valFee ? L('Less valuation fee', neg(f.valFee)) : ''}
-          ${L('Less mortgage stamp duty', neg(f.mortgageDuty), '', '0.4% of loan, max $500')}
-          ${f.miscBuy ? L('Less HDB resale and misc fees', neg(f.miscBuy), '', 'resale application $80 + misc $150') : ''}
-          ${c.otherBuy ? L('Less other costs', neg(c.otherBuy)) : ''}
-          ${f.levy ? L('Less HDB resale levy', neg(f.levy), '', 'second subsidised home') : ''}
-          ${L('Max purchase price', money(b.maxPrice), 'tot big purple')}
-          ${b.topUp > 0.5 ? L('Cash top-up needed', money(b.topUp), 'tot bad', `cash needed ${money(f.cashNeeded)} vs ${money(c.cashAvail)} available`) : ''}`)}`;
+      const f = b.f, P = b.maxPrice;
+      const down = P - f.loan;
+      const lend = c.hdbLoan ? 'An HDB loan' : 'A bank loan';
+      const toPrepare = down + f.fees;
+      afford = `<div class="rp-answer"><div><div class="k">Max purchase price</div><div class="v">${money(P)}</div></div>
+        <p>${lend} of <b>${money(f.loan)}</b> (${pct(f.loan / Math.max(1, P), 0)} of the price), provided the client puts up the
+        <b>${money(down)}</b> downpayment and <b>${money(f.fees)}</b> of stamp duty and fees — <b>${money(toPrepare)}</b> in total${f.minCash > 0 ? `, of which at least <b>${money(f.minCash)}</b> must be cash` : ''}.</p></div>
+        ${sec('What it takes', `
+          ${L('Purchase price', money(P))}
+          ${L(`Less ${c.hdbLoan ? 'HDB' : 'bank'} loan`, neg(f.loan), '', `${pct(f.loan / Math.max(1, P), 0)} of the price · ${c.incomeRule === 'MSR' ? 'MSR 30%' : 'TDSR 55%'} at ${c.stress}% · ${yrs(c.tenure)}`)}
+          ${L('Downpayment', money(down), 'tot', `${pct(down / Math.max(1, P), 0)} of the price`)}
+          ${f.minCash > 0 ? L('of which at least in cash', money(f.minCash), 'sub', `${pct(c.minCashPct, 0)} of the price — CPF can't be used for this part`) : ''}
+          ${f.minCash > 0 ? L('the rest, CPF or cash', money(down - f.minCash), 'sub') : L('all CPF or cash', '', 'sub')}
+          ${gap}
+          ${L("Buyer's stamp duty", money(f.BSD))}
+          ${f.ABSDamt ? L("Additional buyer's stamp duty", money(f.ABSDamt), '', `${pct(c.absdRate, 0)}${c.absdRefund ? ', refundable' : ''}`) : ''}
+          ${L('Legal fees', money(c.legalBuy))}
+          ${c.fresh ? '' : L("Buyer's agent fee", money(f.agentBuy), '', '1% + 9% GST · cash')}
+          ${f.valFee ? L('Valuation fee', money(f.valFee)) : ''}
+          ${L('Mortgage stamp duty', money(f.mortgageDuty), '', '0.4% of loan, max $500')}
+          ${f.miscBuy ? L('HDB resale and misc fees', money(f.miscBuy), '', 'resale application $80 + misc $150') : ''}
+          ${c.otherBuy ? L('Other costs', money(c.otherBuy)) : ''}
+          ${f.levy ? L('HDB resale levy', money(f.levy), '', 'second subsidised home · cash') : ''}
+          ${L('Stamp duty and fees', money(f.fees), 'tot')}
+          ${gap}
+          ${L('Total to prepare', money(toPrepare), 'tot big purple', 'downpayment + stamp duty and fees')}`)}`;
     }
 
     // --- Sale of current home
