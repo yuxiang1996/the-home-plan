@@ -307,6 +307,7 @@
 
     /* Sections: one column, labels left, a short note in the middle, amounts lined up on the right */
     .rp-s { margin-top: 16px; break-inside: avoid; }
+    .rp-fine { margin: 6px 0 0; font-size: 9.5px; line-height: 1.45; color: #7b827e; font-style: italic; }
     .rp-s h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-size: 12.5px; letter-spacing: -0.01em; }
     .rp-s h2::before { content: ""; width: 4px; height: 14px; border-radius: 2px; background: var(--buy); }
     .rp-s h2 i { font-style: normal; width: 19px; height: 19px; border-radius: 50%; background: var(--ink); color: #fff; display: inline-grid; place-items: center; font-size: 10px; }
@@ -1184,6 +1185,7 @@
     if (c.hdbLoan) return ['A <b>bank loan</b> is assessed on TDSR 55% instead of MSR 30% and may lend more. Check with a banker or mortgage broker.'];
     return [
       '<b>Pledging or showing funds:</b> check with a banker or mortgage broker whether pledging, or showing (unpledged) cash or eligible assets, can raise the loan.',
+      '<b>Include variable income</b> such as bonuses, commission or rental income, if not already counted. Banks count part of it, so the loan is likely to go up. Check with a banker on what they accept.',
       ...(c.otherDebt ? ['<b>Clear other monthly debts</b> such as car loans or credit cards before applying. Less debt leaves more room for the home loan.'] : []),
       '<b>Add a co-borrower</b> with income, such as a parent or sibling. Check ABSD and the effect on loan tenure first.',
     ];
@@ -1379,7 +1381,7 @@
           ${L('Less cash available', neg(Math.min(c.cashAvail, at.cashNeeded)), '', cashSrc(c))}
           ${L(need ? 'Cash top-up needed' : 'Cash left over', money(Math.abs(c.shortfall)), `tot big ${need ? 'bad' : 'good'}`)}
           ${L('Cash due before completion', money(c.upfront), 'sub', upfrontNote(c))}`)
-        + (ways.length ? `<section class="rp-s"><h2>Ways to raise the loan</h2><ul class="rp-notes">${ways.map(w => `<li>${w}</li>`).join('')}</ul></section>` : '');
+        + (ways.length ? `<section class="rp-s"><h2>Ways to raise the loan</h2><ul class="rp-notes">${ways.map(w => `<li>${w}</li>`).join('')}</ul><p class="rp-fine">These are general pointers only, not mortgage advice. Whether any of them applies, and by how much, depends on the bank's own assessment. The client should check with a banker or mortgage broker before relying on them.</p></section>` : '');
     }
 
     // --- New launch payment timeline
