@@ -220,6 +220,28 @@
   .dock a { margin-left: auto; color: var(--ink); background: #fff; text-decoration: none; font-size: 13px; font-weight: 600; padding: 10px 14px; border-radius: 999px; white-space: nowrap; }
   @media (min-width: 760px) { .dock { display: none; } }
 
+  [hidden] { display: none !important; }
+  .typebar { display: flex; align-items: center; gap: 10px 16px; flex-wrap: wrap; background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 12px 16px; margin: 0 0 16px; --c: var(--who); }
+  .typebar .tb-k { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; font-weight: 800; color: var(--muted); }
+  .typebar .seg-toggle { display: flex; flex: 1 1 340px; max-width: 460px; }
+  .typebar .seg-toggle button { flex: 1 1 0; font-size: 15px; min-height: 42px; padding: 8px 10px; }
+  .typebar .tb-rule { font-size: 13px; color: var(--muted); flex: 1 1 260px; }
+  .typebar .tb-rule b { color: var(--ink); }
+  .card-head em { margin-left: auto; }
+  .card-export { flex: none; border: 1px solid rgba(255, 255, 255, .6); background: rgba(255, 255, 255, .16); color: #fff; font: inherit; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 6px 11px; border-radius: 999px; cursor: pointer; margin-left: 10px; }
+  .card-export:hover { background: rgba(255, 255, 255, .3); }
+  @media (max-width: 480px) { .card-head em { display: none; } .card-head span { flex: 1; } }
+  .card-export:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  #export-dlg { position: fixed; inset: 0; z-index: 30; background: rgba(15, 20, 18, .5); display: grid; place-items: center; padding: 16px; }
+  .dlg-card { background: var(--card); border-radius: 18px; padding: 22px 22px 18px; width: min(460px, 100%); max-height: calc(100vh - 32px); overflow-y: auto; box-shadow: 0 30px 80px rgba(0, 0, 0, .28); --c: var(--who); }
+  .dlg-card h3 { font-family: var(--serif); font-weight: 600; font-size: 24px; margin: 0 0 14px; }
+  .dlg-list { display: grid; gap: 8px; }
+  .dlg-row { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border: 1.5px solid var(--line); border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 14px; }
+  .dlg-row:has(input:checked) { border-color: var(--who); background: var(--who-soft); }
+  .dlg-row input[type=checkbox] { width: 20px; height: 20px; flex: none; accent-color: var(--who); }
+  .dlg-row em { margin-left: auto; font-style: normal; font-weight: 500; font-size: 12px; color: var(--faint); }
+  .dlg-row.off { opacity: .55; cursor: default; }
+  .dlg-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
   #report { display: none; }
   /* Margin 0 stops the browser printing its own date, title and URL in the page margins. */
   @page { size: A4 portrait; margin: 0; }
@@ -228,7 +250,27 @@
     html, body { background: #fff; }
     body { font-size: 11px; }
     .wrap { max-width: none; padding: 0; }
-    .wrap > :not(#report), .dock { display: none !important; }
+    .wrap > :not(#report), .dock, #export-dlg { display: none !important; }
+    /* Cover page */
+    .rp-cover { height: 296mm; display: flex; flex-direction: column; padding: 24mm 20mm 14mm; position: relative; overflow: hidden;
+      background: radial-gradient(700px 500px at 100% 0%, rgba(164, 122, 44, .16), transparent 60%), radial-gradient(600px 500px at 0% 100%, rgba(13, 92, 80, .12), transparent 60%), #fbf8f1; }
+    .rp-cover::before { content: ""; position: absolute; inset: 0; opacity: .9; pointer-events: none;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='1130' viewBox='0 0 800 1130'%3E%3Cg fill='none' stroke='%23a47a2c' stroke-opacity='.14'%3E%3Cpath d='M-20 820 C 180 720 320 900 520 800 S 760 640 840 700'/%3E%3Cpath d='M-20 860 C 190 760 330 940 530 840 S 770 680 840 740'/%3E%3Cpath d='M-20 900 C 200 800 340 980 540 880 S 780 720 840 780'/%3E%3Cpath d='M-20 940 C 210 840 350 1020 550 920 S 790 760 840 820'/%3E%3Cpath d='M-20 980 C 220 880 360 1060 560 960 S 800 800 840 860'/%3E%3C/g%3E%3C/svg%3E") center / cover no-repeat; }
+    .rp-cover > * { position: relative; }
+    .cv-kicker { font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--buy); font-weight: 800; }
+    .rp-cover h1 { font-family: var(--serif); font-weight: 600; font-size: 42px; line-height: 1.08; letter-spacing: -0.015em; margin: 14px 0 12px; }
+    .rp-cover h1 span { color: var(--sale); }
+    .cv-date { color: var(--muted); font-size: 12px; margin: 0; }
+    .cv-agent { margin-top: 22mm; display: flex; gap: 22px; align-items: center; padding: 18px 20px; background: #fff; border-radius: 18px; box-shadow: 0 10px 30px -10px rgba(40, 30, 10, .25); border-top: 4px solid var(--buy); }
+    .cv-agent img { width: 128px; height: 160px; object-fit: cover; object-position: top center; border-radius: 12px; flex: none; }
+    .cv-by { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); font-weight: 800; }
+    .cv-name { font-family: var(--serif); font-size: 30px; font-weight: 600; line-height: 1.1; margin-top: 4px; }
+    .cv-full { color: var(--muted); font-size: 12px; margin: 2px 0 10px; }
+    .cv-meta { font-size: 12px; line-height: 1.65; }
+    .cv-contents { margin-top: 14mm; }
+    .cv-contents ol { margin: 8px 0 0 20px; padding: 0; font-size: 15px; line-height: 1.9; font-weight: 600; }
+    .cv-notice { margin-top: auto; font-size: 8.6px; line-height: 1.6; color: var(--muted); border-top: 1px solid var(--line); padding-top: 9px; }
+    .cv-notice b { color: var(--ink); }
     #report { display: block; color: var(--ink); }
     .rp { padding: 14mm 18mm 12mm; }
     .rp + .rp { break-before: page; }
@@ -237,7 +279,9 @@
     .rp-by { margin-top: 5px; font-size: 9.5px; color: var(--ink); }
     .rp-by b { font-weight: 700; }
     .rp-head p { margin: 0; font-size: 10px; color: var(--muted); }
-    .rp-tag { text-align: right; font-size: 10px; color: var(--muted); line-height: 1.5; }
+    .rp-head { flex-wrap: nowrap; margin-bottom: 0; }
+    .rp-head > div:first-child { flex: 1 1 auto; min-width: 0; }
+    .rp-tag { flex: none; text-align: right; font-size: 10px; color: var(--muted); line-height: 1.5; }
     .rp-tag b { display: block; font-size: 11.5px; color: var(--ink); }
 
     /* The answer */
@@ -249,6 +293,7 @@
     /* Sections: one column, labels left, a short note in the middle, amounts lined up on the right */
     .rp-s { margin-top: 16px; break-inside: avoid; }
     .rp-s h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-size: 12.5px; letter-spacing: -0.01em; }
+    .rp-s h2::before { content: ""; width: 4px; height: 14px; border-radius: 2px; background: var(--buy); }
     .rp-s h2 i { font-style: normal; width: 19px; height: 19px; border-radius: 50%; background: var(--ink); color: #fff; display: inline-grid; place-items: center; font-size: 10px; }
     .rp-t { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; table-layout: fixed; }
     .rp-t col.l { width: 46%; } .rp-t col.n { width: 34%; } .rp-t col.a { width: 20%; }
@@ -285,12 +330,13 @@
       <p class="tagline">How much you can borrow, and the cash and CPF you need. Singapore rules as at Oct 2026.</p>
     </div>
     <div class="actions">
-      <button class="ghost primary" id="print">Print / PDF</button>
+      <button class="ghost primary" id="print">Export PDF</button>
       <button class="ghost" id="reset">Clear all</button>
     </div>
   </header>
 
   <section id="report" aria-hidden="true"></section>
+  <div class="typebar" id="typebar"></div>
 
   <div class="layout">
     <div class="inputs">
@@ -302,10 +348,11 @@
     <aside class="results" id="results" aria-live="polite"></aside>
   </div>
 
-  <p class="disclaimer"><b>Disclaimer:</b> All figures are estimates for reference only and are not a loan approval or financial advice. Final loan amounts depend on the bank's or HDB's own assessment, valuation and prevailing rules.</p>
+  <p class="disclaimer"><b>Important notice:</b> All figures are indicative estimates for reference only. They are not an offer, approval or guarantee of any loan, and not financial, legal or tax advice. Actual amounts are subject to HDB or the bank's assessment, valuation and prevailing rules.</p>
   <p class="note">Rules as at Oct 2026: TDSR 55% and MSR 30% at a 4% stress rate (HDB loan: 3% floor), LTV 75% / 55% by tenure and age, BSD and ABSD rates from IRAS, SSD 4-year holding period for homes bought from 4 Jul 2025. Agent fees include 9% GST.</p>
 </div>
 
+<div id="export-dlg" hidden></div>
 <div class="dock" id="dock"><div class="in">
   <div><small>Max price</small><b id="dock-loan">—</b></div>
   <div><small id="dock-cash-lbl">Cash needed</small><b id="dock-cash">—</b></div>
@@ -330,7 +377,7 @@
   const LEGAL = 2000, LEGAL_HDB = 1000; // private lawyer; HDB conveyancing (no bank loan involved)
   const VAL_FEE = 0;
   // Shown on every PDF (CEA requires the salesperson's registration and the agency's licence).
-  const AGENT = { name: 'Kenn Kwang', full: 'Kwang Yu Xiang', cea: 'R070212H', agency: 'Huttons Asia Pte Ltd', licence: 'L3008899K' };
+  const AGENT = { name: 'Kenn Kwang', full: 'Kwang Yu Xiang', cea: 'R070212H', agency: 'Huttons Asia Pte Ltd', licence: 'L3008899K', phone: '+65 9720 7289' };
   // HDB resale levy on a second subsidised home, by the first subsidised flat sold (on or after 3 Mar 2006).
   const LEVY = { '2': 15000, '3': 30000, '4': 40000, '5': 45000, '3gen': 45000, ex: 50000, ec: 55000 };
   const LEVY_TYPES = [['2', '2-room / 2-room Flexi'], ['3', '3-room'], ['4', '4-room'], ['5', '5-room'], ['3gen', '3Gen'], ['ex', 'Executive'], ['ec', 'Executive condo (EC)']];
@@ -359,7 +406,7 @@
   const KEY = 'loan-calculator-v1';
   const blankBuyer = () => ({ age: '', cit: 'sc', fixed: '', variable: '', debts: '', other: false, propLoans: '', oa: '', cash: '', owned: '0', loans: '0' });
   const defaults = () => ({
-    n: 1, married: true, withKids: false,
+    n: 1, married: true, withKids: false, clientName: '',
     b: [blankBuyer(), blankBuyer()],
     buy: { type: 'private', mode: 'resale', price: '', val: '', lease: '', loan: 'bank', rate: '2.0', stress: '4.0', tenure: '', grants: '', keep: '', legal: null, hdbLegal: false, valFee: null, other: '', levyOn: false, levyType: '4', levySingle: false, levy: null, grantPHG: false, cashUse: '' },
     sale: { on: false, type: 'hdb', owner: 'both', price: '', loan: '', cpf: [{ p: '', i: '' }, { p: '', i: '' }], first: true, repaid: true, hdb2nd: true, contra: true, bought: '', legal: null, hdbLegal: false, penalty: '', share: '', coOwner: false, coP: '', coI: '' },
@@ -583,7 +630,15 @@
   // HDB only acts for buyers on an HDB loan, and for HDB sellers with no bank loan to redeem.
   const buyLegalDefault = () => state.buy.type === 'hdb' && state.buy.loan === 'hdb' && state.buy.hdbLegal ? LEGAL_HDB : LEGAL;
   const saleLegalDefault = () => state.sale.type === 'hdb' && state.sale.hdbLegal ? LEGAL_HDB : LEGAL;
-  function renderAll() { const c = compute(); renderWho(c); renderLoan(c); renderSale(); renderBuy(c); renderResults(c); }
+  function renderTypebar(c) {
+    const rule = c.hdbLoan ? 'HDB loan: <b>MSR 30%</b> of income, tested at 3%'
+      : c.hdb || c.ec ? 'Bank loan: <b>MSR 30%</b> for home loans and <b>TDSR 55%</b> for all debts, tested at 4%'
+      : 'Bank loan: <b>TDSR 55%</b> of income for all debts, tested at 4% — MSR does not apply to private property';
+    document.getElementById('typebar').innerHTML = `<span class="tb-k">Buying</span>
+      ${seg('buy.type', [['hdb', 'HDB flat'], ['private', 'Private property'], ['ec', 'New EC']], 'Property type')}
+      <span class="tb-rule">${rule}</span>`;
+  }
+  function renderAll() { const c = compute(); renderTypebar(c); renderWho(c); renderLoan(c); renderSale(); renderBuy(c); renderResults(c); }
 
   // ---------- Calculation ----------
   function compute() {
@@ -800,7 +855,10 @@
         const cashBound = f.cashNeeded >= cashAvail - 1000;
         const limit = cpfIdle > 1000 && f.minCash > 0 && cashBound ? 'mincash'
           : downCap < Infinity && f.cashDown >= downCap - 1000 ? 'downcap' : cashBound ? 'cash' : 'all';
-        budget = { maxPrice, f, cpfIdle, limit };
+        const nudge = fund(maxPrice + 10000, maxPrice + 10000, poolStart);
+        const cashPer10k = nudge.cashNeeded - f.cashNeeded;
+        const pricePerK = cashPer10k > 0 ? 1000 * 10000 / cashPer10k : 0;
+        budget = { maxPrice, f, cpfIdle, limit, pricePerK };
       } else budget = { maxPrice: 0, f: fund(0, 0, poolStart), cpfIdle: poolStart, limit: 'fees' };
     }
 
@@ -918,7 +976,7 @@
       const cut = at && at.loan !== at.maxLoan;
       const why = !at ? `${c.incomeRule === 'MSR' ? 'MSR 30%' : 'TDSR 55%'} at ${c.stress}% stress rate`
         : at.binding === 'LTV' ? `At this price, capped by LTV (${pct(c.ltv, 1)} of ${at.cov ? 'valuation' : 'price'})` : `At this price, capped by income — ${at.binding === 'MSR' ? 'MSR 30%' : 'TDSR 55%'}`;
-      html += `<div class="card loan"><div class="card-head"><span>${at ? 'Maximum loan' : 'Loan from income'}</span><em>${typeLbl} · ${loanLbl}</em></div>
+      html += `<div class="card loan"><div class="card-head"><span>${at ? 'Maximum loan' : 'Loan from income'}</span><em>${typeLbl} · ${loanLbl}</em><button type="button" class="card-export" data-export="loan" title="Export this section as a PDF">Export</button></div>
         <div class="hero"><div class="big">${money(big)}</div><div class="why">${why}</div></div>
         <table class="rows">
           ${cut ? row('Loan you take', money(at.loan), 'hl', [at.hdbCut ? `CPF beyond the downpayment −${money(at.hdbCut)}` : '', at.cashCut ? `Required sale cash beyond the downpayment −${money(at.cashCut)}` : ''].filter(Boolean).join(' · ')) : ''}
@@ -956,7 +1014,7 @@
       const s = c.sale, split = c.owners.length > 1;
       const cpfRows = split ? c.owners.map(i => row(`Buyer ${i + 1} CPF refund`, money(-s.backBy[i]), 'minor', s.owedBy[i] - s.backBy[i] > 0.5 ? `Of ${money(s.owedBy[i])} owed` : '')).join('') : '';
       const nextRows = c.B.map((b, i) => row(`Buyer ${i + 1}`, money(c.oaBy[i] + (s.backBy[i] || 0)), '', `OA ${money(c.oaBy[i])} + refund ${money(s.backBy[i] || 0)}`)).join('');
-      html += `<div class="card proceeds"><div class="card-head"><span>Sale proceeds</span><em>${state.sale.type === 'hdb' ? 'HDB' : 'Private'} · ${money(s.price)}</em></div>
+      html += `<div class="card proceeds"><div class="card-head"><span>Sale proceeds</span><em>${state.sale.type === 'hdb' ? 'HDB' : 'Private'} · ${money(s.price)}</em><button type="button" class="card-export" data-export="sale" title="Export this section as a PDF">Export</button></div>
         <table class="rows">
           ${row('Selling price', money(s.price))}
           ${row('Less loan and CPF refund', money(-(s.loan + s.cpfBackAll)), '', `Loan ${money(s.loan)} · CPF ${money(s.cpfBack)}${s.coOwner ? ` + co-owner ${money(s.coBack)}` : ''}`)}
@@ -994,12 +1052,14 @@
         : b.limit === 'cash' ? 'Limited by cash — downpayment plus fees uses all her cash'
         : b.limit === 'fees' ? 'Not enough cash for the fees'
         : `All loan, CPF and cash used · loan capped by ${f.binding === 'LTV' ? `LTV (${pct(c.ltv, 0)})` : 'income'}`;
-      html += `<div class="card budget"><div class="card-head"><span>Max affordability</span><em>${typeLbl}</em></div>
+      html += `<div class="card budget"><div class="card-head"><span>Max affordability</span><em>${typeLbl}</em><button type="button" class="card-export" data-export="afford" title="Export this section as a PDF">Export</button></div>
         <div class="hero"><div class="big">${money(b.maxPrice)}</div><div class="why">${limitTxt}${c.absdRate ? ` · after ${pct(c.absdRate, 0)} ABSD` : ''}</div></div>
         <table class="rows">
           ${row(c.hdbLoan ? 'HDB loan' : 'Bank loan', money(f.loan))}
           ${row('Downpayment', money(f.D), '', `CPF ${money(f.cpfDown)} + cash ${money(f.cashDown)}`)}
           ${row('Stamp duty and fees on top', money(f.fees), 'minor', f.cpfFees > 0.5 ? `CPF ${money(f.cpfFees)} + cash ${money(f.cashFees)}` : 'All in cash')}
+          ${b.limit === 'mincash' ? row('CPF she can\u2019t use', money(b.cpfIdle), 'hl', `At least ${pct(c.minCashPct, 0)} of the price must be cash — CPF can\u2019t replace it. Each extra $1,000 of cash raises the max price by about ${money(b.pricePerK)}`) : ''}
+          ${b.limit === 'mincash' && c.at && c.at.maxLoan > f.loan + 1000 ? row('Why not the full loan?', '', 'minor', `Income supports ${money(c.incomeLoanR)}, but the loan is ${pct(c.ltv, 0)} of the price — and the price is capped by her cash`) : ''}
         </table>
         ${more('budget', `
           ${row('CPF OA', money(f.cpfUsed), '', c.sale && c.sale.cpfBack ? `Incl. ${money(c.sale.cpfBack)} sale refund` : '')}
@@ -1025,7 +1085,7 @@
       const cuts = [at.hdbCut ? `CPF beyond the downpayment −${money(at.hdbCut)}` : '', at.cashCut ? `Required sale cash beyond the downpayment −${money(at.cashCut)}` : ''].filter(Boolean).join(' · ');
       const cashDownNote = at.cov ? `Incl. ${money(at.cov)} above valuation` : at.minCash > 0 ? `Incl. min. ${pct(c.minCashPct, 0)} cash ${money(at.minCash)}` : '';
       const cpfLeft = c.poolStart - at.cpfUsed;
-      html += `<div class="card cost"><div class="card-head"><span>Purchase at ${money(at.P)}</span><em>${need ? 'Cash short' : 'Covered'}</em></div>
+      html += `<div class="card cost"><div class="card-head"><span>Purchase at ${money(at.P)}</span><em>${need ? 'Cash short' : 'Covered'}</em><button type="button" class="card-export" data-export="buy" title="Export this section as a PDF">Export</button></div>
         <table class="rows">
           ${row(c.hdbLoan ? 'HDB loan' : 'Bank loan', money(at.loan))}
           ${row('Downpayment', money(at.D), '', `CPF ${money(at.cpfDown)} + cash ${money(at.cashDown)}`)}
@@ -1084,7 +1144,24 @@
     else { lbl.textContent = 'Loan from income'; v.textContent = c.income ? money(c.incomeLoanR) : '—'; }
   }
 
-  // ---------- Print report: one column, amounts lined up on the right, each section working down to a total ----------
+  // ---------- Print report: cover page, then one page per chosen section ----------
+  // Sections a report can carry, in print order. Each card's Export button prints one; the header button picks several.
+  const SECTIONS = [
+    ['loan', 'Loan from income'],
+    ['afford', 'Max affordability'],
+    ['sale', 'Sale of current home'],
+    ['buy', 'Purchase breakdown'],
+  ];
+  const sectionsAvailable = c => SECTIONS.filter(([k]) => (k === 'loan' && c.income) || (k === 'afford' && c.budget) || (k === 'sale' && c.sale) || (k === 'buy' && c.at)).map(([k]) => k);
+  let exportSel = null; // { keys: [...], cover: bool } while an export is printing
+
+  const NOTICE = `This report is prepared by ${AGENT.name} (${AGENT.full}), CEA Reg. No. ${AGENT.cea}, of ${AGENT.agency} (CEA Licence No. ${AGENT.licence}) for general information and reference only.
+    All figures are indicative estimates based on the information provided and on the rules, rates and fees prevailing at the date of preparation. They are not an offer, approval or commitment to grant any loan,
+    and are not a guarantee of any loan amount, price, cost, CPF or cash outcome. Actual eligibility and amounts are subject to the assessment and approval of HDB or the financial institution,
+    property valuation, CPF Board and IRAS rules, and government policies, all of which may change without notice. This report does not constitute financial, legal or tax advice.
+    No representation or warranty, express or implied, is given as to its accuracy or completeness, and no liability is accepted for any loss arising from reliance on it.
+    Please verify all figures with HDB, CPF Board, IRAS, your financial institution and your lawyer before committing to any transaction.`;
+
   function buildReport(c) {
     const at = c.at, b = c.budget, s = c.sale;
     const typeLbl = c.hdb ? 'HDB resale' : c.ec ? 'New EC' : c.fresh ? 'New launch' : 'Private resale';
@@ -1092,65 +1169,82 @@
     const L = (label, amt, cls = '', note = '') => `<tr class="${cls}"><td class="l">${label}</td><td class="n">${note}</td><td class="a">${amt}</td></tr>`;
     const gap = '<tr class="gap"><td colspan="3"></td></tr>';
     const table = rows => `<table class="rp-t"><colgroup><col class="l"><col class="n"><col class="a"></colgroup>${rows}</table>`;
-    let n = 0;
-    const sec = (title, rows) => `<section class="rp-s"><h2><i>${++n}</i>${title}</h2>${table(rows)}</section>`;
+    const sec = (title, rows) => `<section class="rp-s"><h2>${title}</h2>${table(rows)}</section>`;
     const neg = x => money(-x);
+    const avail = sectionsAvailable(c);
+    const keys = (exportSel ? exportSel.keys : avail).filter(k => avail.includes(k));
+    const withCover = exportSel ? exportSel.cover : true;
+    const t = new Date();
+    const forWho = (state.clientName || '').trim();
 
-    // The answer
-    let answer = '';
+    // --- Loan from income: the full working
+    const loan = !c.income ? '' : sec('How the loan is worked out', `
+      ${c.B.map((x, i) => {
+        const who = state.n > 1 ? `Buyer ${i + 1} ` : '';
+        return L(`${who}fixed income`, money(num(x.fixed)), '', '/month') + (num(x.variable) ? L(`${who}variable income`, money(0.7 * num(x.variable)), '', `${money(num(x.variable))} × 70% (30% haircut)`) : '');
+      }).join('')}
+      ${L('Income counted', money(c.income), 'tot', '/month')}
+      ${c.hdbLoan || c.useMSR ? L('× MSR 30%', money(0.3 * c.income), '', 'cap on home loan instalments') : ''}
+      ${(c.hdbLoan || c.useMSR) && c.otherProp ? L('Less other home loans', neg(c.otherProp)) : ''}
+      ${!c.hdbLoan ? L('× TDSR 55%', money(0.55 * c.income), '', 'cap on all debts') : ''}
+      ${!c.hdbLoan && (c.otherDebt + c.otherProp) ? L('Less other debts and home loans', neg(c.otherDebt + c.otherProp)) : ''}
+      ${L('Max monthly instalment', money(Math.max(0, c.allowance)), 'tot', !c.hdbLoan && c.useMSR ? 'lower of MSR and TDSR' : (c.hdbLoan || c.useMSR) ? 'MSR' : 'TDSR (private property)')}
+      ${L('Loan this repays', money(c.incomeLoanR), 'tot big', `at ${c.stress}% stress test over ${yrs(c.tenure)}`)}
+      ${at ? L('Loan by LTV at this price', money(at.ltvLoan), '', `${pct(c.ltv, 1)} of ${at.cov ? 'valuation' : money(at.P)}`) : L('Loan-to-value limit', pct(c.ltv, 1), '', c.hdbLoan ? 'HDB loan' : c.lowTier ? 'lower tier — tenure or age' : 'first housing loan')}
+      ${at ? L('Max loan (the lower)', money(at.maxLoan), 'tot', at.binding === 'LTV' ? 'LTV limit' : 'income limit') : ''}
+      ${gap}
+      ${L('Monthly instalment', money(c.inst), 'big', `${money(at ? at.loan : c.incomeLoanR)} at ${c.rate}%${c.hdbLoan ? ' fixed' : ''} over ${yrs(c.tenure)}`)}
+      ${L('At the stress-test rate', money(c.instStress), 'sub', `${c.stress}% · ${c.hdbLoan ? `MSR ${pct(c.msrUsed)} of 30%` : `TDSR ${pct(c.tdsrUsed)} of 55%`}`)}
+      ${L('Loan tenure', yrs(c.tenure), 'sub', c.agesKnown ? `${state.n > 1 ? 'income-weighted' : 'buyer'} age ${c.iwaa.toFixed(1)}` : '')}`);
+
+    // --- Max affordability
+    let afford = '';
     if (b) {
       const f = b.f;
-      answer = `<div class="rp-answer"><div><div class="k">Max purchase price</div><div class="v">${money(b.maxPrice)}</div></div>
+      const cpfNote = [s && s.cpfBack ? `refund ${money(s.cpfBack)}` : '', c.oaTotal ? `existing OA ${money(c.oaTotal)}` : '', c.grants ? `grants ${money(c.grants)}` : ''].filter(Boolean).join(' + ');
+      afford = `<div class="rp-answer"><div><div class="k">Max purchase price</div><div class="v">${money(b.maxPrice)}</div></div>
         <p>${c.hdbLoan ? 'An HDB' : 'A bank'} loan of <b>${money(f.loan)}</b>, <b>${money(f.cpfUsed)}</b> of CPF and <b>${money(f.cashNeeded)}</b> of cash
-        cover this price plus <b>${money(f.fees)}</b> of stamp duty and fees.${at ? ` At the ${money(at.P)} being considered, ${c.shortfall > 0.5 ? `the client is <b>${money(c.shortfall)} short</b> in cash.` : `the client has <b>${money(-c.shortfall)}</b> of cash left over.`}` : ''}</p></div>`;
+        cover this price plus <b>${money(f.fees)}</b> of stamp duty and fees.</p></div>
+        ${sec('Money for the next home', `
+          ${L(c.hdbLoan ? 'HDB loan' : 'Bank loan', money(f.loan), '', `${c.incomeRule === 'MSR' ? 'MSR 30%' : 'TDSR 55%'} at ${c.stress}% · ${yrs(c.tenure)}`)}
+          ${L('CPF OA', money(f.cpfUsed), '', cpfNote)}
+          ${L('Cash', money(f.cashNeeded), '', `of ${money(c.cashAvail)}: ${cashSrc(c)}`)}
+          ${L('Total funds', money(f.loan + f.cpfUsed + f.cashNeeded), 'tot')}`)}
+        ${sec('Max purchase price', `
+          ${L('Total funds', money(f.loan + f.cpfUsed + f.cashNeeded))}
+          ${L("Less buyer's stamp duty", neg(f.BSD))}
+          ${f.ABSDamt ? L("Less additional buyer's stamp duty", neg(f.ABSDamt), '', `${pct(c.absdRate, 0)}${c.absdRefund ? ', refundable' : ''}`) : ''}
+          ${L('Less legal fees', neg(c.legalBuy))}
+          ${c.fresh ? '' : L("Less buyer's agent fee", neg(f.agentBuy), '', '1% + 9% GST')}
+          ${f.valFee ? L('Less valuation fee', neg(f.valFee)) : ''}
+          ${L('Less mortgage stamp duty', neg(f.mortgageDuty), '', '0.4% of loan, max $500')}
+          ${c.otherBuy ? L('Less other costs', neg(c.otherBuy)) : ''}
+          ${f.levy ? L('Less HDB resale levy', neg(f.levy), '', 'second subsidised home') : ''}
+          ${L('Max purchase price', money(b.maxPrice), 'tot big purple')}
+          ${b.limit === 'mincash' ? L('CPF that can\u2019t be used', money(b.cpfIdle), 'sub', `at least ${pct(c.minCashPct, 0)} of the price must be cash · each extra $1,000 of cash adds about ${money(b.pricePerK)}`) : ''}`)}`;
     }
 
-    // 1. Sale
+    // --- Sale of current home
     let sale = '';
     if (s) {
       const fees = s.agent + s.legal + s.ssd + s.penalty;
       const feeNote = [`agent ${money(s.agent)}`, `legal ${money(s.legal)}`, s.ssd ? `SSD ${money(s.ssd)}` : '', s.penalty ? `bank ${money(s.penalty)}` : ''].filter(Boolean).join(' · ');
-      const cpfNote = c.owners.length > 1 ? c.owners.map(i => `Buyer ${i + 1} ${money(s.backBy[i])}`).join(' · ') : 'Principal + accrued interest';
-      sale = sec(`Sale of current home`, `
+      const cpfNote = s.coOwner ? `client ${money(s.cpfBack)} · co-owner ${money(s.coBack)}` : c.owners.length > 1 ? c.owners.map(i => `Buyer ${i + 1} ${money(s.backBy[i])}`).join(' · ') : 'principal + accrued interest';
+      sale = sec('Proceeds from the sale', `
         ${L('Selling price', money(s.price))}
         ${L('Less outstanding loan', neg(s.loan))}
-        ${L('Less CPF refund to OA', neg(s.cpfBackAll), '', s.coOwner ? `client ${money(s.cpfBack)} · co-owner ${money(s.coBack)}` : cpfNote)}
+        ${L('Less CPF refund to OA', neg(s.cpfBackAll), '', cpfNote)}
         ${L('Less agent and legal fees', neg(fees), '', feeNote)}
         ${L('Cash proceeds', money(s.cash), 'tot big')}
-        ${s.share != null ? L("Client's share", money(s.share), 'sub', s.shareTyped ? 'Divorce or co-owner split' : 'Half — co-owner gets the other half') : ''}
-        ${s.rule50 && s.mustUse > 0 ? L('Must go into the next flat', money(s.mustUse), 'sub', `2nd HDB loan rule · client keeps ${money(s.keepCash)}`) : ''}`);
+        ${s.share != null ? L("Client's share", money(s.share), 'sub', s.shareTyped ? 'divorce or co-owner split' : 'half — co-owner gets the other half') : ''}
+        ${s.rule50 && s.mustUse > 0 ? L('Must go into the next flat', money(s.mustUse), 'sub', `2nd HDB loan rule · client keeps ${money(s.keepCash)}`) : ''}
+        ${gap}
+        ${L('Cash to client', money(Math.max(0, s.clientCash)))}
+        ${L('CPF available for next home', money(c.poolStart), '', `incl. ${money(s.cpfBack)} refunded from the sale`)}
+        ${L('Total for next home', money(Math.max(0, s.clientCash) + c.poolStart), 'tot big good')}`);
     }
 
-    // 2. Money for the next home (what the max price uses)
-    let funds = '';
-    if (b) {
-      const f = b.f;
-      const cpfNote = [s && s.cpfBack ? `refund ${money(s.cpfBack)}` : '', c.oaTotal ? `existing OA ${money(c.oaTotal)}` : '', c.grants ? `grants ${money(c.grants)}` : ''].filter(Boolean).join(' + ');
-      funds = sec('Money for the next home', `
-        ${L(c.hdbLoan ? 'HDB loan' : 'Bank loan', money(f.loan), '', `${c.incomeRule === 'MSR' ? 'MSR 30%' : 'TDSR 55%'} at ${c.stress}% · ${yrs(c.tenure)}`)}
-        ${L('CPF OA', money(f.cpfUsed), '', cpfNote)}
-        ${L('Cash', money(f.cashNeeded), '', `of ${money(c.cashAvail)}: ${cashSrc(c)}`)}
-        ${L('Total funds', money(f.loan + f.cpfUsed + f.cashNeeded), 'tot')}`);
-    }
-
-    // 3. Max purchase price
-    let max = '';
-    if (b) {
-      const f = b.f;
-      max = sec('Max purchase price', `
-        ${L('Total funds', money(f.loan + f.cpfUsed + f.cashNeeded))}
-        ${L("Less buyer's stamp duty", neg(f.BSD))}
-        ${f.ABSDamt ? L("Less additional buyer's stamp duty", neg(f.ABSDamt), '', `${pct(c.absdRate, 0)}${c.absdRefund ? ', refundable' : ''}`) : ''}
-        ${L('Less legal fees', neg(c.legalBuy))}
-        ${c.fresh ? '' : L("Less buyer's agent fee", neg(f.agentBuy), '', '1% + 9% GST')}
-        ${f.valFee ? L('Less valuation fee', neg(f.valFee)) : ''}
-        ${L('Less mortgage stamp duty', neg(f.mortgageDuty), '', '0.4% of loan, max $500')}
-        ${c.otherBuy ? L('Less other costs', neg(c.otherBuy)) : ''}
-        ${f.levy ? L('Less HDB resale levy', neg(f.levy), '', 'Second subsidised home') : ''}
-        ${L('Max purchase price', money(b.maxPrice), 'tot big purple')}`);
-    }
-
-    // 4. At the entered price
+    // --- Purchase breakdown at the entered price
     let buy = '';
     if (at) {
       const need = c.shortfall > 0.5;
@@ -1171,34 +1265,62 @@
         ${L('Cash due before completion', money(c.upfront), 'sub', upfrontNote(c))}`);
     }
 
-    // 5. Monthly repayment
-    const monthly = !c.income ? '' : sec('Monthly repayment', `
-      ${L('Monthly instalment', money(c.inst), 'big', `${money(at ? at.loan : c.incomeLoanR)} at ${c.rate}%${c.hdbLoan ? ' fixed' : ''} over ${yrs(c.tenure)}`)}
-      ${L('At the stress-test rate', money(c.instStress), 'sub', `${c.stress}% · ${c.hdbLoan ? `MSR ${pct(c.msrUsed)} of 30%` : `TDSR ${pct(c.tdsrUsed)} of 55%`}`)}`);
-
-    // Notes: warnings first, then up to three others
     const warn = c.flags.filter(f => f[0] === 'warn'), rest = c.flags.filter(f => f[0] !== 'warn').slice(0, 3);
-    const notes = [...warn, ...rest].length ? `<section class="rp-s"><h2><i>${++n}</i>Notes</h2><ul class="rp-notes">${[...warn, ...rest].map(([k, t]) => `<li class="${k}">${t}</li>`).join('')}</ul></section>` : '';
+    const notes = [...warn, ...rest].length ? `<section class="rp-s"><h2>Notes</h2><ul class="rp-notes">${[...warn, ...rest].map(([k, x]) => `<li class="${k}">${x}</li>`).join('')}</ul></section>` : '';
 
-    const t = new Date();
     const who = c.B.map((x, i) => `${state.n > 1 ? `Buyer ${i + 1}: ` : ''}${CIT[x.cit]}${has(x.age) ? `, ${x.age}` : ''}, ${money(num(x.fixed) + num(x.variable))}/mth`).join(' · ');
-    const head = sub => `<header class="rp-head">
-        <div><h1>Home Loan &amp; Cash Plan</h1><p>${sub}</p>
-          <p class="rp-by">Prepared by <b>${AGENT.name}</b> (${AGENT.full}) · CEA Reg. No. <b>${AGENT.cea}</b> · ${AGENT.agency} · Licence ${AGENT.licence}</p></div>
+    const head = title => `<header class="rp-head">
+        <div><h1>${title}</h1><p>${forWho ? `Prepared for ${esc(forWho)} · ` : ''}${fmtDate(t)} · ${who}</p></div>
         <div class="rp-tag"><b>${typeLbl}</b>${loanLbl} · ${yrs(c.tenure)}</div>
       </header>`;
-    const foot = `<footer class="rp-foot"><div class="rp-sign">Prepared by <b>${AGENT.name}</b> · CEA Reg. No. ${AGENT.cea} · ${AGENT.agency} (Licence ${AGENT.licence})</div><b>Disclaimer:</b> All figures are estimates for reference only and are not a loan approval or financial advice. Final loan amounts depend on the bank's or HDB's own assessment, valuation and prevailing rules.
-        Rules used: TDSR 55%, MSR 30%, stress test ${c.stress}%, LTV by tenure and age, IRAS BSD/ABSD/SSD rates, HDB resale terms clauses 24 and 31.</footer>`;
+    const foot = full => `<footer class="rp-foot"><div class="rp-sign">Prepared by <b>${AGENT.name}</b> · CEA Reg. No. ${AGENT.cea} · ${AGENT.agency} (Licence ${AGENT.licence}) · ${AGENT.phone}</div>
+      ${full ? `<b>Important notice.</b> ${NOTICE}` : '<b>Indicative estimates only — not an offer, approval or guarantee of any loan.</b> See the important notice on the cover page.'}</footer>`;
 
-    // Page 1: the answer and how it is built. Page 2 (only with a price): buying at that price, monthly, notes.
-    const page1 = `${answer}${sale}${funds}${max}`;
-    const page2 = `${buy}${monthly}${notes}`;
-    const split = !!at;
-    document.getElementById('report').innerHTML = split
-      ? `<div class="rp">${head(`Prepared ${fmtDate(t)} · ${who}`)}${page1}</div>
-         <div class="rp">${head(`Purchase breakdown · ${fmtDate(t)}`)}${page2}${foot}</div>`
-      : `<div class="rp">${head(`Prepared ${fmtDate(t)} · ${who}`)}${page1}${page2}${foot}</div>`;
+    const bodyFor = { loan, afford, sale, buy };
+    const titleFor = Object.fromEntries(SECTIONS);
+    const pages = keys.map((k, i) => `<div class="rp">${head(titleFor[k])}${bodyFor[k]}${i === keys.length - 1 ? notes : ''}${foot(!withCover)}</div>`);
+
+    const cover = !withCover ? '' : `<div class="rp rp-cover">
+      <div class="cv-top"><div class="cv-kicker">Home Loan &amp; Cash Plan</div>
+        <h1>${forWho ? `Prepared for<br><span>${esc(forWho)}</span>` : 'Your home loan<br><span>and cash plan</span>'}</h1>
+        <p class="cv-date">${fmtDate(t)} · ${typeLbl} · ${loanLbl}</p></div>
+      <div class="cv-agent">
+        <img src="img/kenn-kwang.webp" alt="${AGENT.name}">
+        <div><div class="cv-by">A report by</div><div class="cv-name">${AGENT.name}</div>
+          <div class="cv-full">${AGENT.full}</div>
+          <div class="cv-meta">${AGENT.agency}<br>CEA Reg. No. ${AGENT.cea} · Agency Licence ${AGENT.licence}<br>${AGENT.phone}</div></div>
+      </div>
+      <div class="cv-contents"><div class="cv-by">In this report</div><ol>${keys.map(k => `<li>${titleFor[k]}</li>`).join('')}</ol></div>
+      <div class="cv-notice"><b>Important notice.</b> ${NOTICE}</div>
+    </div>`;
+    document.getElementById('report').innerHTML = cover + pages.join('');
   }
+
+  // ---------- Export ----------
+  function exportPDF(keys, cover = true) {
+    exportSel = { keys, cover };
+    buildReport(compute());
+    window.print();
+  }
+  window.addEventListener('afterprint', () => { exportSel = null; buildReport(compute()); });
+
+  function openExport() {
+    const c = compute(), avail = sectionsAvailable(c);
+    const dlg = document.getElementById('export-dlg');
+    dlg.innerHTML = `<div class="dlg-card" role="dialog" aria-modal="true" aria-labelledby="dlg-t">
+      <h3 id="dlg-t">Export report</h3>
+      <label class="f full"><span>Prepared for (optional)</span><input type="text" id="dlg-client" value="${esc(state.clientName || '')}" placeholder="Client's name"></label>
+      <p class="block-title" style="margin:16px 0 6px">Sections</p>
+      <div class="dlg-list">
+        ${SECTIONS.map(([k, label]) => `<label class="dlg-row${avail.includes(k) ? '' : ' off'}"><input type="checkbox" data-sec="${k}" ${avail.includes(k) ? 'checked' : 'disabled'}><span>${label}</span>${avail.includes(k) ? '' : `<em>${k === 'sale' ? 'Switch on the sale first' : k === 'buy' ? 'Enter a purchase price first' : 'Enter income first'}</em>`}</label>`).join('')}
+        <label class="dlg-row"><input type="checkbox" id="dlg-cover" checked><span>Cover page with your photo</span></label>
+      </div>
+      <div class="dlg-actions"><button class="ghost" type="button" id="dlg-cancel">Cancel</button><button class="ghost primary" type="button" id="dlg-go">Export PDF</button></div>
+    </div>`;
+    dlg.hidden = false;
+    dlg.querySelector('#dlg-go').focus();
+  }
+  function closeExport() { document.getElementById('export-dlg').hidden = true; }
 
   // ---------- Events ----------
   const openMore = new Set();
@@ -1286,7 +1408,22 @@
     armed = false; e.target.textContent = 'Clear all';
     state = defaults(); save(); renderAll();
   });
-  document.getElementById('print').addEventListener('click', () => window.print());
+  document.getElementById('print').addEventListener('click', openExport);
+  document.addEventListener('click', e => {
+    const ex = e.target.closest('[data-export]');
+    if (ex) { exportPDF([ex.dataset.export], true); return; }
+    if (e.target.id === 'dlg-cancel' || e.target.id === 'export-dlg') { closeExport(); return; }
+    if (e.target.id === 'dlg-go') {
+      const keys = [...document.querySelectorAll('#export-dlg [data-sec]:checked')].map(i => i.dataset.sec);
+      if (!keys.length) return;
+      state.clientName = document.getElementById('dlg-client').value;
+      save();
+      const cover = document.getElementById('dlg-cover').checked;
+      closeExport();
+      setTimeout(() => exportPDF(keys, cover), 60);
+    }
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeExport(); });
 
   renderAll();
 })();
