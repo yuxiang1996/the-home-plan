@@ -893,13 +893,7 @@
     let gapInfo = null;
     if (at) {
       const loanGap = Math.max(0, Math.floor(at.ltvLoan / 100) * 100 - at.maxLoan);
-      const ratio = hdbLoan || incomeRule === 'MSR' ? MSR : TDSR;
-      const extraIncome = loanGap > 0 ? pmt(stress, tenure, loanGap) / ratio : 0;
-      // MAS TDSR: pledged eligible assets count as income at amount / 48 months; unpledged ("show fund") take a 30% haircut first.
-      const pledge = Math.ceil(extraIncome * 48 / 1000) * 1000;
-      const showFund = Math.ceil(extraIncome * 48 / 0.7 / 1000) * 1000;
-      const debtGain = !hdbLoan && incomeRule === 'TDSR' && otherDebt > 0 ? Math.min(loanGap, Math.floor(pv(stress, tenure, otherDebt) / 100) * 100) : 0;
-      gapInfo = { loanGap, extraIncome, pledge, showFund, debtGain, full75: at.P - Math.floor(at.ltvLoan / 100) * 100 };
+      gapInfo = { loanGap, full75: at.P - Math.floor(at.ltvLoan / 100) * 100 };
     }
     const shortfall = !at ? 0 : at.cashDown > downCap + 0.5 ? Math.max(at.cashDown - downCap, at.cashNeeded - cashAvail) : at.cashNeeded - cashAvail;
     let deposit = 0, depositLbl = '', dutyUpfront = 0, upfront = 0, inst = 0, instStress = 0;
@@ -1126,7 +1120,7 @@
           ${row('Paid from cash', money(at.cashNeeded), 'minor', `Cash available ${money(c.cashAvail)}`)}
           ${need ? row('Cash top-up needed', money(c.shortfall), 'total hl') : row('Cash left over', money(-c.shortfall), 'total good')}
         </table>
-        ${ways.length ? `<div class="ways"><p class="block-title">Ways to raise the loan</p><ul>${ways.map(w => `<li>${w}</li>`).join('')}</ul><p class="fine">Indicative only. Speak to a banker or mortgage broker before deciding.</p></div>` : ''}
+        ${ways.length ? `<div class="ways"><p class="block-title">Ways to raise the loan</p><ul>${ways.map(w => `<li>${w}</li>`).join('')}</ul><p class="fine">These are general pointers only, not mortgage advice. Whether any of them applies, and by how much, depends on the bank's own assessment. Check with a banker or mortgage broker before relying on them.</p></div>` : ''}
         ${more('cost', `
           ${row('Purchase price', money(at.P), '', at.cov ? `Valuation ${money(at.V)}` : '')}
           ${row(`Less ${c.hdbLoan ? 'HDB' : 'bank'} loan`, money(-at.loan))}
