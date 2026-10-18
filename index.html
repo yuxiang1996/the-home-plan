@@ -974,6 +974,7 @@
         <div class="hero"><div class="big">${money(big)}</div><div class="why">${why}</div></div>
         <table class="rows">
           ${cut ? row('Loan you take', money(at.loan), 'hl', [at.hdbCut ? `CPF beyond the downpayment −${money(at.hdbCut)}` : '', at.cashCut ? `Required sale cash beyond the downpayment −${money(at.cashCut)}` : ''].filter(Boolean).join(' · ')) : ''}
+          ${c.budget ? row('Max purchase price', money(c.budget.maxPrice), 'total', c.budget.limit === 'loan' ? `Where ${money(c.budget.f.loan)} is ${pct(c.ltv, 0)} of the price — see Max affordability` : 'Loan plus all CPF and cash — see Max affordability') : ''}
           ${row('Monthly instalment', money(c.inst), 'total', `At ${c.rate}%${c.hdbLoan ? ' fixed' : ''} over ${yrs(c.tenure)}`)}
         </table>
         ${more('loan', `
@@ -1003,7 +1004,39 @@
       </div>`;
     }
 
-    // 2. Sale proceeds
+    // 2. Max affordability
+    if (c.budget) {
+      const b = c.budget, f = b.f;
+      const limitTxt = b.limit === 'loan'
+        ? `Loan of ${money(f.loan)} is ${pct(c.ltv, 0)} of this price — the client funds the ${pct(1 - c.ltv, 0)} downpayment`
+        : `Loan plus all of the client's CPF and cash`;
+      html += `<div class="card budget"><div class="card-head"><span>Max affordability</span><em>${typeLbl}</em><button type="button" class="card-export" data-export="afford" title="Export this section as a PDF">Export</button></div>
+        <div class="hero"><div class="big">${money(b.maxPrice)}</div><div class="why">${limitTxt}${c.absdRate ? ` · after ${pct(c.absdRate, 0)} ABSD` : ''}</div></div>
+        <table class="rows">
+          ${row(c.hdbLoan ? 'HDB loan' : 'Bank loan', money(f.loan))}
+          ${row('Downpayment', money(f.D), '', `CPF ${money(f.cpfDown)} + cash ${money(f.cashDown)}`)}
+          ${row('Stamp duty and fees on top', money(f.fees), 'minor', f.cpfFees > 0.5 ? `CPF ${money(f.cpfFees)} + cash ${money(f.cashFees)}` : 'All in cash')}
+          ${b.topUp > 0.5 ? row('Cash top-up needed', money(b.topUp), 'total hl', `Cash needed ${money(f.cashNeeded)} (incl. at least ${pct(c.minCashPct, 0)} of the price in cash) vs ${money(c.cashAvail)} available`) : row('Cash left over', money(c.cashAvail - f.cashNeeded), 'total good', `Of ${money(c.cashAvail)}`)}
+        </table>
+        ${more('budget', `
+          ${row('CPF OA', money(f.cpfUsed), '', c.sale && c.sale.cpfBack ? `Incl. ${money(c.sale.cpfBack)} sale refund` : '')}
+          ${row('Cash', money(f.cashNeeded), '', `Of ${money(c.cashAvail)}: ${cashSrc(c)}`)}
+          ${row('Total funds', money(f.loan + f.cpfUsed + f.cashNeeded), 'total')}
+          <tr class="sub"><td colspan="2">Stamp duty and fees</td></tr>
+          ${row("Buyer's Stamp Duty", money(-f.BSD))}
+          ${f.ABSDamt ? row("Additional Buyer's Stamp Duty", money(-f.ABSDamt), 'hl', `${pct(c.absdRate, 0)}${c.absdRefund ? ' · refundable' : ''}`) : ''}
+          ${row('Legal fees', money(-c.legalBuy))}
+          ${c.fresh ? '' : row("Buyer's agent fee", money(-f.agentBuy), '', '1% + 9% GST')}
+          ${f.valFee ? row('Valuation fee', money(-f.valFee)) : ''}
+          ${row('Mortgage stamp duty', money(-f.mortgageDuty), '', '0.4% of loan, max $500')}
+          ${c.otherBuy ? row('Other costs', money(-c.otherBuy)) : ''}
+          ${f.levy ? row('HDB resale levy', money(-f.levy), 'hl', 'Cash only') : ''}
+          ${row('Max purchase price', money(b.maxPrice), 'total')}
+          ${b.cpfIdle > 1000 ? row('CPF not usable', money(b.cpfIdle), 'minor', 'Cash rule binds first') : ''}`)}
+      </div>`;
+    }
+
+    // 3. Sale proceeds
     if (c.sale) {
       const s = c.sale, split = c.owners.length > 1;
       const cpfRows = split ? c.owners.map(i => row(`Buyer ${i + 1} CPF refund`, money(-s.backBy[i]), 'minor', s.owedBy[i] - s.backBy[i] > 0.5 ? `Of ${money(s.owedBy[i])} owed` : '')).join('') : '';
@@ -1035,38 +1068,6 @@
           ${nextRows}
           ${c.grants ? row('CPF housing grants', money(c.grants)) : ''}
           ${row('CPF available', money(c.poolStart), 'total')}`)}
-      </div>`;
-    }
-
-    // 3. Max affordability
-    if (c.budget) {
-      const b = c.budget, f = b.f;
-      const limitTxt = b.limit === 'loan'
-        ? `Loan of ${money(f.loan)} is ${pct(c.ltv, 0)} of this price — the client funds the ${pct(1 - c.ltv, 0)} downpayment`
-        : `Loan plus all of the client's CPF and cash`;
-      html += `<div class="card budget"><div class="card-head"><span>Max affordability</span><em>${typeLbl}</em><button type="button" class="card-export" data-export="afford" title="Export this section as a PDF">Export</button></div>
-        <div class="hero"><div class="big">${money(b.maxPrice)}</div><div class="why">${limitTxt}${c.absdRate ? ` · after ${pct(c.absdRate, 0)} ABSD` : ''}</div></div>
-        <table class="rows">
-          ${row(c.hdbLoan ? 'HDB loan' : 'Bank loan', money(f.loan))}
-          ${row('Downpayment', money(f.D), '', `CPF ${money(f.cpfDown)} + cash ${money(f.cashDown)}`)}
-          ${row('Stamp duty and fees on top', money(f.fees), 'minor', f.cpfFees > 0.5 ? `CPF ${money(f.cpfFees)} + cash ${money(f.cashFees)}` : 'All in cash')}
-          ${b.topUp > 0.5 ? row('Cash top-up needed', money(b.topUp), 'total hl', `Cash needed ${money(f.cashNeeded)} (incl. at least ${pct(c.minCashPct, 0)} of the price in cash) vs ${money(c.cashAvail)} available`) : row('Cash left over', money(c.cashAvail - f.cashNeeded), 'total good', `Of ${money(c.cashAvail)}`)}
-        </table>
-        ${more('budget', `
-          ${row('CPF OA', money(f.cpfUsed), '', c.sale && c.sale.cpfBack ? `Incl. ${money(c.sale.cpfBack)} sale refund` : '')}
-          ${row('Cash', money(f.cashNeeded), '', `Of ${money(c.cashAvail)}: ${cashSrc(c)}`)}
-          ${row('Total funds', money(f.loan + f.cpfUsed + f.cashNeeded), 'total')}
-          <tr class="sub"><td colspan="2">Stamp duty and fees</td></tr>
-          ${row("Buyer's Stamp Duty", money(-f.BSD))}
-          ${f.ABSDamt ? row("Additional Buyer's Stamp Duty", money(-f.ABSDamt), 'hl', `${pct(c.absdRate, 0)}${c.absdRefund ? ' · refundable' : ''}`) : ''}
-          ${row('Legal fees', money(-c.legalBuy))}
-          ${c.fresh ? '' : row("Buyer's agent fee", money(-f.agentBuy), '', '1% + 9% GST')}
-          ${f.valFee ? row('Valuation fee', money(-f.valFee)) : ''}
-          ${row('Mortgage stamp duty', money(-f.mortgageDuty), '', '0.4% of loan, max $500')}
-          ${c.otherBuy ? row('Other costs', money(-c.otherBuy)) : ''}
-          ${f.levy ? row('HDB resale levy', money(-f.levy), 'hl', 'Cash only') : ''}
-          ${row('Max purchase price', money(b.maxPrice), 'total')}
-          ${b.cpfIdle > 1000 ? row('CPF not usable', money(b.cpfIdle), 'minor', 'Cash rule binds first') : ''}`)}
       </div>`;
     }
 
