@@ -969,7 +969,7 @@
     }
     if (!at && absdRate > 0) flags.push(['warn', `ABSD of ${pct(absdRate, 0)} applies to this purchase${absdRefund ? ' (refundable if the first home is sold within 6 months)' : ''}. The budget above already allows for it.`]);
     if (sl.on && sl.first && owners.length) flags.push(['good', 'Selling first, so the home being sold is not counted for ABSD.']);
-    if (at && at.binding !== 'LTV' && at.loan > 0) flags.push(['info', `Income caps this loan, not LTV. ${incomeRule} at the ${stress}% stress rate supports ${money(incomeLoan)}. To get the full ${pct(ltv, 0)}, ${incomeRule} would need about ${money(pmt(stress, tenure, at.ltvLoan) / (incomeRule === 'MSR' ? MSR : TDSR) + (incomeRule === 'MSR' ? otherProp / MSR : (otherDebt + otherProp) / TDSR))} monthly income.`]);
+    if (at && at.binding !== 'LTV' && at.loan > 0) flags.push(['info', `Income caps this loan, not LTV. ${incomeRule} at the ${stress}% stress rate supports ${money(incomeLoan)}.`]);
     if (sl.on) flags.push(['info', 'Sale proceeds and the CPF refund arrive only when the sale completes. The deposit and stamp duty fall due earlier, so plan that cash first.']);
 
     return { B, hdb, ec, hdbLoan, fresh, iwaa, youngest, agesKnown, income, grossTotal, tenure, autoTenure, tenureHint, cap75, capMax, lowTier,
@@ -1119,7 +1119,7 @@
           ${row('Stamp duty and fees', money(at.fees))}
           ${row('Total to prepare', money(g.full75 + at.fees), 'total')}
           <tr class="sub"><td colspan="2">With the loan the client qualifies for</td></tr>
-          ${row(lend, money(at.loan), '', g.loanGap > 0 ? `${money(g.loanGap)} less than ${pct(c.ltv, 0)} — income limit` : at.loan < full ? 'Reduced by CPF and sale cash going in first' : 'Full loan')}
+          ${row(lend, money(at.loan), '', g.loanGap > 0 ? 'Income limit' : at.loan < full ? 'Reduced by CPF and sale cash going in first' : 'Full loan')}
           ${row('Downpayment + fees', money(at.D + at.fees), 'total', `${pct(at.D / at.P, 0)} downpayment ${money(at.D)} + fees ${money(at.fees)}`)}
           ${row('Paid from CPF', money(at.cpfUsed), 'minor')}
           ${row('Paid from cash', money(at.cashNeeded), 'minor', `Cash available ${money(c.cashAvail)}`)}
@@ -1177,21 +1177,16 @@
   const upfrontNote = c => `${c.depositLbl}${c.dutyUpfront ? (c.hdb ? ' + stamp duty CPF cannot cover' : ' + stamp duty within 14 days') : ''}${!c.hdb && !c.fresh && c.dutyUpfront ? '. CPF reimburses the duty at completion' : ''}`;
   const cashSrc = c => c.cashUseIn != null ? `Entered as cash to use${c.cashAvail > c.cashUseIn ? ' (raised to the 2nd HDB loan minimum)' : ''}`
     : [c.sale ? `${c.sale.share != null ? 'Sale share' : 'Sale'} ${money(c.saleCash)}` : '', `savings ${money(c.savings)}`].filter(Boolean).join(' + ');
-  // Ways to close a loan gap at the entered price. Bank loans only — HDB loans don't take pledges.
+  // Ways to raise the loan when income caps it below LTV. General pointers only — no amounts; the banker or broker sizes them.
   function waysToClose(c) {
     const g = c.gapInfo;
     if (!c.at || !g || g.loanGap <= 0) return [];
-    const out = [];
-    if (!c.hdbLoan) {
-      out.push(`<b>Pledge</b> about <b>${money(g.pledge)}</b> of cash or eligible assets with the bank for 48 months. It is counted as ${money(g.extraIncome)} a month of extra income, enough for the ${money(g.loanGap)} gap.`);
-      out.push(`<b>Show fund (unpledged)</b> about <b>${money(g.showFund)}</b> of eligible assets. The bank counts 70% of it, spread over 48 months.`);
-      if (g.debtGain > 0) out.push(`<b>Clear other monthly debts</b> (${money(c.otherDebt)}/month) before applying — that alone adds about ${money(g.debtGain)} of loan.`);
-      out.push('<b>Add a co-borrower</b> with income (e.g. a parent or sibling) — mind ABSD and the age used for tenure.');
-    } else {
-      out.push(`Income caps the HDB loan ${money(g.loanGap)} below ${pct(c.ltv, 0)}. A bank loan uses TDSR 55% and may lend more — compare both.`);
-    }
-    out.push(`Otherwise the <b>${money(g.loanGap)}</b> gap is paid in cash or CPF on top of the ${pct(1 - c.ltv, 0)} downpayment.`);
-    return out;
+    if (c.hdbLoan) return ['A <b>bank loan</b> is assessed on TDSR 55% instead of MSR 30% and may lend more. Check with a banker or mortgage broker.'];
+    return [
+      '<b>Pledging or showing funds:</b> check with a banker or mortgage broker whether pledging, or showing (unpledged) cash or eligible assets, can raise the loan.',
+      ...(c.otherDebt ? ['<b>Clear other monthly debts</b> such as car loans or credit cards before applying. Less debt leaves more room for the home loan.'] : []),
+      '<b>Add a co-borrower</b> with income, such as a parent or sibling. Check ABSD and the effect on loan tenure first.',
+    ];
   }
   // New launch: the Progressive Payment Scheme. Legal steps are dated from the OTP; construction stages are spread
   // between the OTP and the expected TOP, so those dates are rough. The client pays the downpayment stages first,
@@ -1376,7 +1371,7 @@
           ${L('Stamp duty and fees', money(at.fees), '', feeNote)}
           ${L('Total to prepare', money(g.full75 + at.fees), 'tot big purple', 'downpayment + stamp duty and fees')}`)
         + sec('With the loan the client qualifies for', `
-          ${L(lend, money(at.loan), '', g.loanGap > 0 ? `income limit — ${money(g.loanGap)} below ${pct(c.ltv, 0)}` : 'full loan')}
+          ${L(lend, money(at.loan), '', g.loanGap > 0 ? 'income limit' : 'full loan')}
           ${L('Downpayment', money(at.D), '', `${pct(at.D / at.P, 0)} of the price`)}
           ${L('Stamp duty and fees', money(at.fees))}
           ${L('Total needed', money(at.D + at.fees), 'tot')}
