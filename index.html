@@ -376,6 +376,8 @@
   const BSD_BANDS = [[180000, 0.01], [180000, 0.02], [640000, 0.03], [500000, 0.04], [1500000, 0.05], [Infinity, 0.06]];
   const LEGAL = 2000, LEGAL_HDB = 1000; // private lawyer; HDB conveyancing (no bank loan involved)
   const VAL_FEE = 0;
+  // HDB sale: resale application fee ($80) plus misc (caveat, admin) — shown as one figure.
+  const HDB_SALE_MISC = 80 + 150;
   // Shown on every PDF (CEA requires the salesperson's registration and the agency's licence).
   const AGENT = { name: 'Kenn Kwang', full: 'Kwang Yu Xiang', cea: 'R070212H', agency: 'Huttons Asia Pte Ltd', licence: 'L3008899K', phone: '+65 9720 7289' };
   // HDB resale levy on a second subsidised home, by the first subsidised flat sold (on or after 3 Mar 2006).
@@ -689,7 +691,8 @@
         }
       }
       const penalty = num(sl.penalty);
-      const cash = grossP - cpfBackAll - agent - legal - ssd - penalty;
+      const misc = sl.type === 'hdb' ? HDB_SALE_MISC : 0;
+      const cash = grossP - cpfBackAll - agent - legal - ssd - penalty - misc;
       // 2nd HDB loan: HDB counts cash proceeds before agent and legal fees (deposit included);
       // the seller keeps the higher of $25,000 or half, the rest must cut the new loan.
       // A divorce or a co-owner who isn't buying: the client only gets her share, and HDB applies
@@ -701,7 +704,7 @@
       const rule50 = hdbLoan && sl.hdb2nd;
       const keepCash = ruleCash <= 25000 ? ruleCash : Math.max(25000, ruleCash / 2);
       const mustUse = rule50 ? Math.min(Math.max(0, clientCash), ruleCash - keepCash) : 0;
-      sale = { price, loan, owed, owedBy, cpfBack, backBy, agent, legal, ssd, ssdRate, ssdNote, penalty, cash, share, shareTyped, clientCash, coOwner: sl.coOwner, coOwed, coBack, cpfBackAll, shortCPF: owedAll - cpfBackAll, rule50, ruleCash, keepCash, mustUse };
+      sale = { price, loan, owed, owedBy, cpfBack, backBy, agent, legal, ssd, ssdRate, ssdNote, penalty, misc, cash, share, shareTyped, clientCash, coOwner: sl.coOwner, coOwed, coBack, cpfBackAll, shortCPF: owedAll - cpfBackAll, rule50, ruleCash, keepCash, mustUse };
       if (price && grossP < 0) flags.push(['warn', `The selling price doesn't cover the outstanding loan. You will need ${money(-grossP)} in cash to redeem it.`]);
       if (price && sale.shortCPF > 0.5 && grossP >= 0) flags.push(['info', `Sale proceeds cover only ${money(cpfBack)} of the ${money(owed)} CPF to refund. For a sale at market value, CPF does not ask you to top up the shortfall.`]);
     }
@@ -1045,7 +1048,7 @@
         <table class="rows">
           ${row('Selling price', money(s.price))}
           ${row('Less loan and CPF refund', money(-(s.loan + s.cpfBackAll)), '', `Loan ${money(s.loan)} · CPF ${money(s.cpfBack)}${s.coOwner ? ` + co-owner ${money(s.coBack)}` : ''}`)}
-          ${row('Less sale fees', money(-(s.agent + s.legal + s.ssd + s.penalty)), '', [`Agent ${money(s.agent)}`, `legal ${money(s.legal)}`, s.ssd ? `SSD ${money(s.ssd)}` : '', s.penalty ? `bank penalty ${money(s.penalty)}` : ''].filter(Boolean).join(' · '))}
+          ${row('Less agent, legal and misc fees', money(-(s.agent + s.legal + s.ssd + s.penalty + s.misc)), '', [`Agent 2% + GST ${money(s.agent)}`, `legal ${money(s.legal)}`, s.misc ? `HDB resale and misc ${money(s.misc)}` : '', s.ssd ? `SSD ${money(s.ssd)}` : '', s.penalty ? `bank penalty ${money(s.penalty)}` : ''].filter(Boolean).join(' · '))}
           ${s.share != null ? row('Cash proceeds', money(s.cash), 'total') : ''}
           ${row(s.share != null ? (s.shareTyped ? "Cash to client (her share)" : "Cash to client (half)") : 'Cash proceeds', money(s.clientCash), 'total', s.rule50 && s.mustUse > 0 ? `${money(s.mustUse)} must go into the next flat (2nd HDB loan)` : '')}
           ${row('CPF available for next home', money(c.poolStart), 'total', `Incl. ${money(s.cpfBack)} refunded from the sale`)}
@@ -1059,6 +1062,7 @@
           ${cpfRows}
           ${row("Seller's agent fee", money(-s.agent), '', '2% + 9% GST · cash')}
           ${row('Legal fees', money(-s.legal), '', 'Cash only — CPF cannot pay sale fees')}
+          ${s.misc ? row('HDB resale and misc fees', money(-s.misc), '', 'Resale application $80 + misc $150 (caveat, admin)') : ''}
           ${s.ssd ? row("Seller's Stamp Duty", money(-s.ssd), 'hl', s.ssdNote) : ''}
           ${s.penalty ? row('Bank penalty / clawback', money(-s.penalty)) : ''}
           ${row('Cash proceeds', money(s.cash), 'total')}
@@ -1219,14 +1223,14 @@
     // --- Sale of current home
     let sale = '';
     if (s) {
-      const fees = s.agent + s.legal + s.ssd + s.penalty;
-      const feeNote = [`agent ${money(s.agent)}`, `legal ${money(s.legal)}`, s.ssd ? `SSD ${money(s.ssd)}` : '', s.penalty ? `bank ${money(s.penalty)}` : ''].filter(Boolean).join(' · ');
+      const fees = s.agent + s.legal + s.ssd + s.penalty + s.misc;
+      const feeNote = [`agent ${money(s.agent)}`, `legal ${money(s.legal)}`, s.misc ? `HDB resale and misc ${money(s.misc)}` : '', s.ssd ? `SSD ${money(s.ssd)}` : '', s.penalty ? `bank ${money(s.penalty)}` : ''].filter(Boolean).join(' · ');
       const cpfNote = s.coOwner ? `client ${money(s.cpfBack)} · co-owner ${money(s.coBack)}` : c.owners.length > 1 ? c.owners.map(i => `Buyer ${i + 1} ${money(s.backBy[i])}`).join(' · ') : 'principal + accrued interest';
       sale = sec('Proceeds from the sale', `
         ${L('Selling price', money(s.price))}
         ${L('Less outstanding loan', neg(s.loan))}
         ${L('Less CPF refund to OA', neg(s.cpfBackAll), '', cpfNote)}
-        ${L('Less agent and legal fees', neg(fees), '', feeNote)}
+        ${L('Less agent, legal and misc fees', neg(fees), '', feeNote)}
         ${L('Cash proceeds', money(s.cash), 'tot big')}
         ${s.share != null ? L("Client's share", money(s.share), 'sub', s.shareTyped ? 'divorce or co-owner split' : 'half — co-owner gets the other half') : ''}
         ${s.rule50 && s.mustUse > 0 ? L('Must go into the next flat', money(s.mustUse), 'sub', `2nd HDB loan rule · client keeps ${money(s.keepCash)}`) : ''}
