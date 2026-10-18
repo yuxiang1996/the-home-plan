@@ -327,6 +327,34 @@
     .rp-t tr.purple td.l, .rp-t tr.purple td.a { color: var(--plum); }
     .rp-t tr.gap td { border: 0; padding: 3px 0; }
 
+    .rp-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 0 12px; break-inside: avoid; }
+    .rp-stats > div { padding: 10px 12px; border-radius: 9px; background: #f6f4ee; border: 1px solid #ebe7dc; }
+    .rp-stats span { display: block; font-size: 8.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+    .rp-stats b { display: block; font-family: "Manrope", sans-serif; font-size: 20px; font-weight: 800; letter-spacing: -0.02em; margin: 3px 0 1px; font-variant-numeric: tabular-nums; }
+    .rp-stats small { display: block; font-size: 9px; color: var(--muted); }
+    .rp-stats .hi { background: var(--plum-soft); border-color: #dcd6ee; }
+    .rp-stats .hi span, .rp-stats .hi b { color: var(--plum); }
+    .rp-tl { width: 100%; border-collapse: collapse; table-layout: fixed; font-variant-numeric: tabular-nums; }
+    .rp-tl col.no { width: 6%; } .rp-tl col.st { width: 23%; } .rp-tl col.wh { width: 22%; } .rp-tl col.sh { width: 7%; }
+    .rp-tl col.pb { width: 15%; } .rp-tl col.am { width: 13%; } .rp-tl col.in { width: 14%; }
+    .rp-tl th { font-size: 8.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; text-align: left; padding: 0 4px 5px 0; border-bottom: 1.5px solid var(--ink); }
+    .rp-tl th.r { text-align: right; padding-right: 0; }
+    .rp-tl td { font-size: 10px; padding: 5px 4px 5px 0; border-bottom: 1px solid #eceeec; vertical-align: top; line-height: 1.35; }
+    .rp-tl td small { display: block; font-size: 8.5px; color: var(--muted); font-weight: 400; margin-top: 1px; }
+    .rp-tl td.no i { font-style: normal; width: 17px; height: 17px; border-radius: 50%; border: 1px solid var(--line); color: var(--muted); display: inline-grid; place-items: center; font-size: 8.5px; font-weight: 700; }
+    .rp-tl tr.pay td.no i { background: var(--sale); border-color: var(--sale); color: #fff; }
+    .rp-tl td.st { font-weight: 600; }
+    .rp-tl td.wh { color: var(--muted); font-size: 9px; }
+    .rp-tl td.wh b { display: block; color: var(--sale); font-size: 10px; }
+    .rp-tl td.sh, .rp-tl td.pb { font-size: 9.5px; }
+    .rp-tl td.am { text-align: right; font-weight: 700; padding-right: 0; }
+    .rp-tl td.in { text-align: right; font-weight: 700; color: var(--plum); padding-right: 0; }
+    .rp-tl td.in small { display: inline; color: var(--plum); }
+    .rp-tl td.in span { color: var(--faint); font-weight: 400; }
+    .rp-tl tr.ph td { font-size: 8.5px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; color: var(--buy); padding: 9px 0 4px; border-bottom: 1px solid #e4dccb; }
+    .rp-tl tr.top td { background: #fbf6ea; }
+    .rp-tl tr.top td.no { box-shadow: inset 3px 0 0 var(--buy); }
+    .rp-tl + .rp-notes { margin-top: 8px; }
     .rp-notes { margin: 4px 0 0; padding: 0; list-style: none; }
     .rp-notes li { position: relative; padding: 0 0 5px 13px; font-size: 10px; line-height: 1.5; }
     .rp-notes li::before { content: ""; position: absolute; left: 0; top: 5px; width: 6px; height: 6px; border-radius: 50%; background: var(--who); }
@@ -1189,13 +1217,13 @@
   // then the bank disburses the rest — instalments grow with each disbursement.
   // Stage, share of price, months after the OTP (rough: foundation ~15 months, framework 9 months on, then ~6 months a stage), rough timing in words.
   const PPS = [
-    ['Foundation work done', 0.10, 15, 'About 12 to 18 months after the OTP'],
+    ['Foundation work done', 0.10, 15, 'About 12–18 months after the OTP'],
     ['Reinforced concrete framework', 0.10, 24, 'About 9 months after foundation'],
-    ['Partition walls', 0.05, 30, 'About 6 months after the stage before'],
-    ['Roof and ceiling', 0.05, 36, 'About 6 months after the stage before'],
-    ['Doors, windows, wiring and plumbing', 0.05, 42, 'About 6 months after the stage before'],
-    ['Car park, roads and drains', 0.05, 48, 'About 6 months after the stage before'],
-    ['TOP — keys handed over', 0.25, 51, "About 4 to 4½ years after the OTP — use the developer's expected TOP"],
+    ['Partition walls', 0.05, 30, 'About 6 months later'],
+    ['Roof and ceiling', 0.05, 36, 'About 6 months later'],
+    ['Doors, windows, wiring and plumbing', 0.05, 42, 'About 6 months later'],
+    ['Car park, roads and drains', 0.05, 48, 'About 6 months later'],
+    ['TOP — keys handed over', 0.25, 51, 'About 4–4½ years after the OTP'],
   ];
   const TOP_MONTHS = 51, CSC_MONTHS = 6;
   const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
@@ -1387,12 +1415,31 @@
     let timeline = '';
     const sch = schedule(c);
     if (sch) {
-      const stepL = x => L(x.ev, x.amt ? money(x.amt) : '', '', [x.dateLbl, x.amt ? x.tag : '', x.sub].filter(Boolean).join(' · '));
-      timeline = `<div class="rp-answer"><div><div class="k">Full monthly instalment</div><div class="v">${money(sch.instFull)}</div></div>
-        <p>The client pays <b>${money(sch.beforeLoan)}</b> (downpayment and stamp duty) before the loan starts. The loan is then drawn as the building progresses,
-        so the instalment grows to about <b>${money(sch.instTop)}</b> at TOP and <b>${money(sch.instFull)}</b> once fully drawn.</p></div>
-        ${sec('Before construction', sch.steps.slice(0, 4).map(stepL).join(''))}
-        ${sec('During construction — timing is rough', sch.steps.slice(4).map(stepL).join(''))}
+      const lend = c.hdbLoan ? 'HDB loan' : 'Bank loan';
+      const tr = (x, i) => {
+        const [share, ...rest] = x.tag ? x.tag.split(' · ') : ['', ''];
+        const payer = x.bank && x.you ? `Client ${money(x.you)}<small>+ loan ${money(x.bank)}</small>` : x.bank ? lend : rest.join(' · ');
+        return `<tr class="${x.ev.startsWith('TOP') ? 'top' : ''}${x.amt ? ' pay' : ''}">
+          <td class="no"><i>${i + 1}</i></td>
+          <td class="st">${x.ev}${x.note ? `<small>${x.note}</small>` : ''}</td>
+          <td class="wh">${x.d ? `<b>${x.dateLbl}</b><small>${x.when}</small>` : x.when}</td>
+          <td class="sh">${x.amt && x.ev !== 'Stamp duty' ? share : x.amt ? '—' : ''}</td>
+          <td class="pb">${x.amt ? payer : ''}</td>
+          <td class="am">${x.amt ? money(x.amt) : ''}</td>
+          <td class="in">${x.bank ? `${money(x.inst)}<small>/mth</small>` : '<span>—</span>'}</td></tr>`;
+      };
+      const phase = t => `<tr class="ph"><td colspan="7">${t}</td></tr>`;
+      timeline = `<div class="rp-stats">
+          <div><span>Paid before the loan starts</span><b>${money(sch.beforeLoan)}</b><small>Downpayment + stamp duty</small></div>
+          <div><span>Instalment at TOP</span><b>${money(sch.instTop)}</b><small>${sch.top ? `~ ${fmtMonth(sch.top)}` : '85% of the price paid'}</small></div>
+          <div class="hi"><span>Full monthly instalment</span><b>${money(sch.instFull)}</b><small>After CSC · ${money(c.at.loan)} at ${c.rate}%</small></div>
+        </div>
+        <table class="rp-tl">
+          <colgroup><col class="no"><col class="st"><col class="wh"><col class="sh"><col class="pb"><col class="am"><col class="in"></colgroup>
+          <thead><tr><th></th><th>Stage</th><th>When</th><th>Share</th><th>Paid by</th><th class="r">Amount</th><th class="r">Instalment</th></tr></thead>
+          <tbody>${phase('Before construction')}${sch.steps.slice(0, 4).map(tr).join('')}
+          ${phase('During construction — timing is rough')}${sch.steps.slice(4).map((x, i) => tr(x, i + 4)).join('')}</tbody>
+        </table>
         <ul class="rp-notes"><li>Construction timing is a rough estimate; actual progress depends on the developer. Legal fees are paid to the lawyer in stages.</li></ul>`;
     }
 
