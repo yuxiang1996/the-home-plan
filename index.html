@@ -197,6 +197,16 @@
   .more.notes { padding: 0; }
   .more.notes > summary { background: var(--card); box-shadow: var(--shadow); }
   .more.notes .flags { margin-top: 4px; }
+  .tl { list-style: none; margin: 0; padding: 4px 0; border-top: 1px solid #f1f2f0; }
+  .tl li { display: grid; grid-template-columns: 24px 1fr auto; gap: 10px; align-items: start; padding: 10px 16px; border-bottom: 1px solid #f1f2f0; }
+  .tl li:last-child { border-bottom: 0; }
+  .tl i { font-style: normal; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line); color: var(--muted); display: grid; place-items: center; font-size: 11px; font-weight: 700; margin-top: 1px; }
+  .tl li.pay i { background: var(--sale); border-color: var(--sale); color: #fff; }
+  .tl-e b { display: block; font-size: 14px; font-weight: 600; }
+  .tl-e small, .tl-a small { display: block; color: var(--faint); font-size: 12px; line-height: 1.35; margin-top: 1px; }
+  .tl-d { display: block; font-size: 12px; font-weight: 700; color: var(--sale); letter-spacing: .01em; }
+  .tl-a { text-align: right; white-space: nowrap; }
+  .tl-a b { display: block; font-size: 14px; }
   .ways { padding: 12px 16px 4px; border-top: 1px solid #f1f2f0; background: #fffaf0; }
   .ways .block-title { margin-bottom: 6px; }
   .ways ul { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.5; }
@@ -608,6 +618,13 @@
         </div>
         <p class="fine">${fresh ? 'No buyer\'s agent fee on a new launch or EC.' : 'Buyer\'s agent fee: 1% + GST.'}</p>
       </div>
+      ${fresh ? `<div class="block">
+        <p class="block-title">Payment timeline</p>
+        <div class="grid2">
+          <label class="f"><span>OTP date</span><input type="date" data-path="buy.otp" value="${esc(s.otp || isoToday())}"></label>
+          <label class="f"><span>Expected TOP</span><input type="month" data-path="buy.top" value="${esc(s.top || topDefault())}"><small>Rough is fine</small></label>
+        </div>
+      </div>` : ''}
       ${levyBlock(c)}`;
   }
 
@@ -835,12 +852,11 @@
         pool -= cpfDown;
       }
       D = P - loan;
-      const mortgageDuty = loan > 0 ? Math.min(500, Math.floor(loan * 0.004)) : 0;
       const cashDown = D - cpfDown;
-      const cashFees = (cpfPayable - cpfFees) + agentBuy + valFee + mortgageDuty + otherBuy + levy + miscBuy;
+      const cashFees = (cpfPayable - cpfFees) + agentBuy + valFee + otherBuy + levy + miscBuy;
       const cashNeeded = cashDown + cashFees;
-      const fees = BSD + ABSDamt + legalBuy + agentBuy + valFee + mortgageDuty + otherBuy + levy + miscBuy;
-      return { P, V, base, cov, ltvLoan, maxLoan, BSD, ABSDamt, agentBuy, valFee, mortgageDuty, levy, miscBuy, loan, D, minCash, cpfDown, cpfFees,
+      const fees = BSD + ABSDamt + legalBuy + agentBuy + valFee + otherBuy + levy + miscBuy;
+      return { P, V, base, cov, ltvLoan, maxLoan, BSD, ABSDamt, agentBuy, valFee, levy, miscBuy, loan, D, minCash, cpfDown, cpfFees,
         cpfUsed: cpfDown + cpfFees, cashDown, cashFees, cashNeeded, poolLeft: pool, hdbCut, cashCut, fees, totalCost: P + fees,
         binding: ltvLoan <= incomeLoan ? 'LTV' : incomeRule };
     }
@@ -936,7 +952,7 @@
     if (grantsIn > 30000 && sl.on && sl.type === 'hdb') flags.push(['warn', `${money(grantsIn)} of grants looks high for someone selling an HDB flat. If that flat was subsidised (bought from HDB, or resale with a grant), she is a second-timer and usually qualifies only for the Proximity grant: $30,000 living with parents or children, $20,000 within 4km. A first-timer married to a second-timer can get $40,000 (2–4 room) or $25,000 (5-room+).`]);
     if (levy > 0) flags.push(['info', `HDB resale levy of <b>${money(levy)}</b> applies to this ${ec ? 'EC' : 'flat'} as a second subsidised home. It must be paid in cash, not CPF or the loan. If the old flat is sold after collecting the new keys, HDB deducts it from the sale proceeds.`]);
     if (ec && !s.levyOn && sl.on && sl.type === 'hdb') flags.push(['warn', 'Check the resale levy: if the HDB flat being sold was bought from HDB (BTO, SBF, DBSS) or with a CPF Housing Grant, this EC is a second subsidised home and a levy of $15,000–$55,000 applies. Switch it on in Purchase.']);
-    if (fresh) flags.push(['info', 'New launch: the loan is drawn in stages as the building progresses, so instalments start low and reach the full amount at TOP.']);
+    if (fresh) flags.push(['info', 'New launch: the loan is drawn in stages as the building progresses, so instalments start low and reach the full amount once the last 15% is drawn at CSC, about a year after TOP.']);
     if (lowTier && agesKnown) {
       const keepTo = hdb ? 25 : 30;
       flags.push(['warn', `A ${yrs(tenure)} tenure ${tenure > keepTo ? `is over ${keepTo} years` : `runs past age 65 (average age ${iwaa.toFixed(1)})`}, so LTV drops to ${pct(ltv, 0)} and the cash downpayment rises to ${pct(minCashPct, 0)}.${cap75 >= 1 ? ` Keep it to ${yrs(cap75)} for the full LTV.` : ''}`]);
@@ -987,16 +1003,16 @@
       html += `<div class="card loan"><div class="card-head"><span>Loan from income</span><em>${typeLbl} · ${loanLbl}</em></div>
         <div class="empty">Enter each buyer's age and income to see how much they can borrow.</div></div>`;
     } else {
-      const big = at ? at.maxLoan : c.incomeLoanR;
-      const cut = at && at.loan !== at.maxLoan;
-      const why = !at ? `${c.incomeRule === 'MSR' ? 'MSR 30%' : 'TDSR 55%'} at ${c.stress}% stress rate`
-        : at.binding === 'LTV' ? `At this price, capped by LTV (${pct(c.ltv, 1)} of ${at.cov ? 'valuation' : 'price'})` : `At this price, capped by income — ${at.binding === 'MSR' ? 'MSR 30%' : 'TDSR 55%'}`;
-      html += `<div class="card loan"><div class="card-head"><span>${at ? 'Maximum loan' : 'Loan from income'}</span><em>${typeLbl} · ${loanLbl}</em><button type="button" class="card-export" data-export="loan" title="Export this section as a PDF">Export</button></div>
-        <div class="hero"><div class="big">${money(big)}</div><div class="why">${why}</div></div>
+      const supports = c.ltv > 0 ? Math.floor(c.incomeLoanR / c.ltv) : 0;
+      const instFull = pmt(c.rate, c.tenure, c.incomeLoanR), instStressFull = pmt(c.stress, c.tenure, c.incomeLoanR);
+      const tdsrMax = c.income ? (instStressFull + c.otherDebt + c.otherProp) / c.income : 0;
+      const msrMax = c.income ? (instStressFull + c.otherProp) / c.income : 0;
+      html += `<div class="card loan"><div class="card-head"><span>Loan from income</span><em>${typeLbl} · ${loanLbl}</em><button type="button" class="card-export" data-export="loan" title="Export this section as a PDF">Export</button></div>
+        <div class="hero"><div class="big">${money(c.incomeLoanR)}</div><div class="why">${c.incomeRule === 'MSR' ? 'MSR 30%' : 'TDSR 55%'} at ${c.stress}% stress rate</div></div>
         <table class="rows">
-          ${cut ? row('Loan you take', money(at.loan), 'hl', [at.hdbCut ? `CPF beyond the downpayment −${money(at.hdbCut)}` : '', at.cashCut ? `Required sale cash beyond the downpayment −${money(at.cashCut)}` : ''].filter(Boolean).join(' · ')) : ''}
-          ${c.budget ? row('Max purchase price', money(c.budget.maxPrice), 'total', c.budget.limit === 'loan' ? `Where ${money(c.budget.f.loan)} is ${pct(c.ltv, 0)} of the price — see Max affordability` : 'Loan plus all CPF and cash — see Max affordability') : ''}
-          ${row('Monthly instalment', money(c.inst), 'total', `At ${c.rate}%${c.hdbLoan ? ' fixed' : ''} over ${yrs(c.tenure)}`)}
+          ${row('Loan-to-value limit', pct(c.ltv, 0), '', c.hdbLoan ? 'HDB loan' : c.loansOut ? `${c.loansOut === 1 ? '2nd' : '3rd'} housing loan` : c.lowTier ? 'Lower tier — tenure or age' : 'First housing loan')}
+          ${supports ? row('Max purchase price this loan supports', money(supports), 'total', `Loan is ${pct(c.ltv, 0)} of the price · client funds the ${pct(1 - c.ltv, 0)} downpayment`) : ''}
+          ${row('Monthly instalment', money(instFull), 'total', `At ${c.rate}%${c.hdbLoan ? ' fixed' : ''} over ${yrs(c.tenure)}`)}
         </table>
         ${more('loan', `
           <tr class="sub"><td colspan="2">How the loan is worked out</td></tr>
@@ -1012,15 +1028,12 @@
           ${!c.hdbLoan && (c.otherDebt + c.otherProp) ? row('Less other debts and home loans', money(-(c.otherDebt + c.otherProp)), '', 'from the TDSR cap') : ''}
           ${row('Max monthly instalment', money(Math.max(0, c.allowance)), 'total', !c.hdbLoan && c.useMSR ? `Lower of MSR ${money(c.msrRoom)} and TDSR ${money(c.tdsrRoom)}` : (c.hdbLoan || c.useMSR) ? 'MSR' : 'TDSR')}
           ${row('Loan this repays', money(c.incomeLoan), 'total', `${money(Math.max(0, c.allowance))}/mth at ${c.stress}% stress rate over ${yrs(c.tenure)}`)}
-          ${at ? row('Loan by LTV', money(at.ltvLoan), '', `${pct(c.ltv, 1)} of ${at.cov ? 'valuation' : 'price'}`) : ''}
-          ${at ? row('Max loan (the lower)', money(at.maxLoan), 'total', at.binding === 'LTV' ? 'LTV limit' : 'Income limit') : ''}
           <tr class="sub"><td colspan="2">Loan terms</td></tr>
           ${row('Loan tenure', yrs(c.tenure), '', c.agesKnown ? `${state.n > 1 ? 'Income-weighted' : 'Buyer'} age ${c.iwaa.toFixed(1)}` : '')}
-          ${row('Loan-to-value', pct(c.ltv, 1), '', c.hdbLoan ? 'HDB loan' : c.loansOut ? `${c.loansOut === 1 ? '2nd' : '3rd'} housing loan` : c.lowTier ? 'Lower tier — tenure or age' : 'First housing loan')}
-          ${row('Instalment at stress rate', money(c.instStress), 'minor')}
+          ${row('Instalment at stress rate', money(instStressFull), 'minor')}
           <tr><td colspan="2" class="meter-cell">
-            ${c.hdbLoan ? '' : meter(`TDSR${cut ? ' on loan you take' : ' at stress rate'}`, c.tdsrUsed, TDSR)}
-            ${c.hdb || c.ec ? meter(`MSR${cut ? ' on loan you take' : ' at stress rate'}`, c.msrUsed, MSR) : ''}
+            ${c.hdbLoan ? '' : meter('TDSR at stress rate', tdsrMax, TDSR)}
+            ${c.hdb || c.ec ? meter('MSR at stress rate', msrMax, MSR) : ''}
           </td></tr>`)}
       </div>`;
     }
@@ -1049,7 +1062,6 @@
           ${row('Legal fees', money(c.legalBuy))}
           ${c.fresh ? '' : row("Buyer's agent fee", money(f.agentBuy), '', '1% + 9% GST · cash')}
           ${f.valFee ? row('Valuation fee', money(f.valFee)) : ''}
-          ${row('Mortgage stamp duty', money(f.mortgageDuty), '', '0.4% of loan, max $500')}
           ${f.miscBuy ? row('HDB resale and misc fees', money(f.miscBuy), '', 'Resale application $80 + misc $150') : ''}
           ${c.otherBuy ? row('Other costs', money(c.otherBuy)) : ''}
           ${f.levy ? row('HDB resale levy', money(f.levy), 'hl', 'Cash only') : ''}
@@ -1126,7 +1138,6 @@
           ${row('Legal fees', money(c.legalBuy), '', legalTag(c))}
           ${c.fresh ? '' : row("Buyer's agent fee", money(at.agentBuy), '', '1% + 9% GST · cash only')}
           ${at.valFee ? row('Valuation fee', money(at.valFee), '', 'Cash only') : ''}
-          ${row('Mortgage stamp duty', money(at.mortgageDuty), '', '0.4% of loan, max $500 · CPF or cash')}
           ${at.miscBuy ? row('HDB resale and misc fees', money(at.miscBuy), '', 'Resale application $80 + misc $150 · cash') : ''}
           ${c.otherBuy ? row('Other costs', money(c.otherBuy), '', 'Cash only') : ''}
           ${at.levy ? row('HDB resale levy', money(at.levy), 'hl', 'Second subsidised home · cash only') : ''}
@@ -1138,6 +1149,21 @@
           ${c.absdRefund && at.ABSDamt ? row('ABSD refunded later', money(at.ABSDamt), 'minor', 'Once the first home is sold within 6 months') : ''}
           ${row('CPF left in OA', money(c.poolStart - at.cpfUsed), 'minor')}
           ${row('Cash due before completion', money(c.upfront), 'hl', upfrontNote(c))}`)}
+      </div>`;
+    }
+    // 5. New launch: rough payment timeline
+    const sch = schedule(c);
+    if (sch) {
+      html += `<div class="card cost"><div class="card-head"><span>Payment timeline</span><em>New launch · rough</em><button type="button" class="card-export" data-export="timeline" title="Export this section as a PDF">Export</button></div>
+        <table class="rows">
+          ${row('Paid before the loan starts', money(sch.beforeLoan), 'total', `Downpayment ${money(c.at.D)} + stamp duty${sch.firstLoan ? ` · loan starts ~ ${fmtMonth(sch.firstLoan.d)}` : ''}`)}
+          ${row('Instalment at TOP', money(sch.instTop), '', `~ ${fmtMonth(sch.top)}`)}
+          ${row('Full instalment', money(sch.instFull), 'total', `After CSC, ~ ${fmtMonth(sch.csc)} · ${money(c.at.loan)} at ${c.rate}%`)}
+        </table>
+        <ol class="tl">${sch.steps.map((x, i) => `<li class="${x.amt ? 'pay' : ''}"><i>${i + 1}</i>
+          <div class="tl-e"><span class="tl-d">${tlDate(x)}</span><b>${x.ev}</b>${x.sub ? `<small>${x.sub}</small>` : ''}</div>
+          <div class="tl-a">${x.amt ? `<small>${x.tag}</small><b>${money(x.amt)}</b>` : ''}</div></li>`).join('')}</ol>
+        <p class="fine" style="padding:0 16px 14px">Construction dates are estimates spread to the expected TOP. Progress depends on the developer. Legal fees are paid to the lawyer in stages.</p>
       </div>`;
     }
     el.innerHTML = html + flagsHtml(c);
@@ -1167,6 +1193,55 @@
     out.push(`Otherwise the <b>${money(g.loanGap)}</b> gap is paid in cash or CPF on top of the ${pct(1 - c.ltv, 0)} downpayment.`);
     return out;
   }
+  // New launch: the Progressive Payment Scheme. Legal steps are dated from the OTP; construction stages are spread
+  // between the OTP and the expected TOP, so those dates are rough. The client pays the downpayment stages first,
+  // then the bank disburses the rest — instalments grow with each disbursement.
+  const PPS = [
+    ['Foundation work done', 0.10, 0.15],
+    ['Reinforced concrete framework', 0.10, 0.35],
+    ['Partition walls', 0.05, 0.55],
+    ['Roof and ceiling', 0.05, 0.65],
+    ['Doors, windows, wiring and plumbing', 0.05, 0.75],
+    ['Car park, roads and drains', 0.05, 0.85],
+    ['TOP — keys handed over', 0.25, 1],
+  ];
+  const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  const fmtMonth = d => `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  const otpDate = () => parseDate(has(state.buy.otp) ? state.buy.otp : isoToday());
+  const topDefault = () => { const d = addYears(otpDate(), 4); return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`; };
+  function schedule(c) {
+    const at = c.at;
+    if (!c.fresh || !at) return null;
+    const P = at.P, otp = otpDate();
+    const [ty, tm] = (/^\d{4}-\d{2}$/.test(state.buy.top || '') ? state.buy.top : topDefault()).split('-').map(Number);
+    let top = new Date(ty, tm - 1, 1);
+    if (top < addDays(otp, 180)) top = addYears(otp, 4);
+    const span = top - otp;
+    let clientLeft = at.D, drawn = 0;
+    const pay = amt => { const you = Math.min(amt, clientLeft); clientLeft -= you; const bank = amt - you; drawn += bank; return { you, bank, inst: drawn ? pmt(c.rate, c.tenure, drawn) : 0 }; };
+    const cashExtra = Math.max(0, Math.min(0.15 * P, at.minCash - 0.05 * P));
+    const tag = (pc, x) => `${pc}% · ${x.bank && x.you ? 'CPF/cash + loan' : x.bank ? (c.hdbLoan ? 'HDB loan' : 'Bank loan') : 'CPF or cash'}`;
+    const steps = [
+      { d: otp, ev: 'Option to Purchase', sub: 'Booking fee paid on the day', amt: 0.05 * P, tag: '5% · Cash', ...pay(0.05 * P) },
+      { d: addDays(otp, 14), ev: 'S&P agreement received', sub: 'Developer sends it within 2 weeks' },
+      { d: addDays(otp, 35), ev: 'Sign the S&P agreement', sub: 'Within 3 weeks of receiving it', amt: 0.15 * P,
+        tag: cashExtra > 0.5 ? `15% · at least ${money(cashExtra)} cash` : '15% · CPF or cash', ...pay(0.15 * P) },
+      { d: addDays(otp, 49), ev: 'Stamp duty', sub: `Within 14 days of signing${at.ABSDamt ? ` · BSD ${money(at.BSD)} + ABSD ${money(at.ABSDamt)}` : ''}`,
+        amt: at.BSD + at.ABSDamt, tag: `${at.ABSDamt ? 'BSD + ABSD' : 'BSD'} · CPF or cash` },
+    ];
+    PPS.forEach(([ev, f, w]) => { const x = pay(f * P); steps.push({ d: new Date(otp.getTime() + w * span), approx: true, ev, amt: f * P, tag: tag(f * 100, x), ...x }); });
+    const csc = new Date(top.getFullYear() + 1, top.getMonth(), 1);
+    const xc = pay(0.15 * P);
+    steps.push({ d: csc, approx: true, ev: 'Certificate of Statutory Completion', amt: 0.15 * P, tag: tag(15, xc), ...xc });
+    steps.forEach(x => {
+      if (x.ev.startsWith('Cert')) x.sub = 'Usually 1 to 2 years after TOP';
+      if (x.bank) x.sub = [x.sub, `${x.you ? `client ${money(x.you)} + ` : ''}loan ${money(x.bank)} · instalment ≈ ${money(x.inst)}/mth`].filter(Boolean).join(' · ');
+    });
+    const firstLoan = steps.find(x => x.bank);
+    return { steps, top, csc, firstLoan, instTop: steps.find(x => x.ev.startsWith('TOP')).inst, instFull: xc.inst, beforeLoan: at.D + at.BSD + at.ABSDamt };
+  }
+  const tlDate = x => x.approx ? `~ ${fmtMonth(x.d)}` : fmtDate(x.d);
+
   const flagsHtml = c => {
     if (!c.flags.length) return '';
     const card = ([k, t]) => `<div class="flag ${k}">${t}</div>`;
@@ -1189,8 +1264,9 @@
     ['afford', 'Max affordability'],
     ['sale', 'Sale of current home'],
     ['buy', 'Purchase breakdown'],
+    ['timeline', 'Payment timeline'],
   ];
-  const sectionsAvailable = c => SECTIONS.filter(([k]) => (k === 'loan' && c.income) || (k === 'afford' && c.budget) || (k === 'sale' && c.sale) || (k === 'buy' && c.at)).map(([k]) => k);
+  const sectionsAvailable = c => SECTIONS.filter(([k]) => (k === 'loan' && c.income) || (k === 'afford' && c.budget) || (k === 'sale' && c.sale) || (k === 'buy' && c.at) || (k === 'timeline' && c.fresh && c.at)).map(([k]) => k);
   let exportSel = null; // { keys: [...], cover: bool } while an export is printing
 
   const NOTICE = `This report is prepared by ${AGENT.name} (${AGENT.full}), CEA Reg. No. ${AGENT.cea}, of ${AGENT.agency} (CEA Licence No. ${AGENT.licence}) for general information and reference only.
@@ -1257,7 +1333,6 @@
           ${L('Legal fees', money(c.legalBuy))}
           ${c.fresh ? '' : L("Buyer's agent fee", money(f.agentBuy), '', '1% + 9% GST · cash')}
           ${f.valFee ? L('Valuation fee', money(f.valFee)) : ''}
-          ${L('Mortgage stamp duty', money(f.mortgageDuty), '', '0.4% of loan, max $500')}
           ${f.miscBuy ? L('HDB resale and misc fees', money(f.miscBuy), '', 'resale application $80 + misc $150') : ''}
           ${c.otherBuy ? L('Other costs', money(c.otherBuy)) : ''}
           ${f.levy ? L('HDB resale levy', money(f.levy), '', 'second subsidised home · cash') : ''}
@@ -1292,7 +1367,7 @@
       const g = c.gapInfo, need = c.shortfall > 0.5;
       const full = Math.floor(at.ltvLoan / 100) * 100;
       const lend = c.hdbLoan ? 'HDB loan' : 'Bank loan';
-      const feeNote = [`BSD ${money(at.BSD)}`, at.ABSDamt ? `ABSD ${money(at.ABSDamt)}` : '', `legal ${money(c.legalBuy)}`, c.fresh ? '' : `agent ${money(at.agentBuy)}`, at.miscBuy ? `HDB resale and misc ${money(at.miscBuy)}` : '', at.levy ? `levy ${money(at.levy)}` : '', `mortgage duty ${money(at.mortgageDuty)}`].filter(Boolean).join(' · ');
+      const feeNote = [`BSD ${money(at.BSD)}`, at.ABSDamt ? `ABSD ${money(at.ABSDamt)}` : '', `legal ${money(c.legalBuy)}`, c.fresh ? '' : `agent ${money(at.agentBuy)}`, at.miscBuy ? `HDB resale and misc ${money(at.miscBuy)}` : '', at.levy ? `levy ${money(at.levy)}` : ''].filter(Boolean).join(' · ');
       const ways = waysToClose(c);
       buy = sec(`Buying at ${money(at.P)} with a full ${pct(c.ltv, 0)} loan`, `
           ${L('Purchase price', money(at.P), '', at.cov ? `valuation ${money(at.V)}` : '')}
@@ -1312,6 +1387,19 @@
         + (ways.length ? `<section class="rp-s"><h2>Ways to raise the loan</h2><ul class="rp-notes">${ways.map(w => `<li>${w}</li>`).join('')}</ul></section>` : '');
     }
 
+    // --- New launch payment timeline
+    let timeline = '';
+    const sch = schedule(c);
+    if (sch) {
+      const stepL = x => L(x.ev, x.amt ? money(x.amt) : '', '', [tlDate(x), x.amt ? x.tag : '', x.sub].filter(Boolean).join(' · '));
+      timeline = `<div class="rp-answer"><div><div class="k">Full monthly instalment</div><div class="v">${money(sch.instFull)}</div></div>
+        <p>The client pays <b>${money(sch.beforeLoan)}</b> (downpayment and stamp duty) before the loan starts. The loan is then drawn as the building progresses,
+        so the instalment grows to about <b>${money(sch.instTop)}</b> at TOP and <b>${money(sch.instFull)}</b> once fully drawn.</p></div>
+        ${sec('Before construction', sch.steps.slice(0, 4).map(stepL).join(''))}
+        ${sec('During construction — dates are rough', sch.steps.slice(4).map(stepL).join(''))}
+        <ul class="rp-notes"><li>Construction dates are estimates spread to the expected TOP; actual progress depends on the developer. Legal fees are paid to the lawyer in stages.</li></ul>`;
+    }
+
     const warn = c.flags.filter(f => f[0] === 'warn'), rest = c.flags.filter(f => f[0] !== 'warn').slice(0, 3);
     const notes = [...warn, ...rest].length ? `<section class="rp-s"><h2>Notes</h2><ul class="rp-notes">${[...warn, ...rest].map(([k, x]) => `<li class="${k}">${x}</li>`).join('')}</ul></section>` : '';
 
@@ -1323,7 +1411,7 @@
     const foot = full => `<footer class="rp-foot"><div class="rp-sign">Prepared by <b>${AGENT.name}</b> · CEA Reg. No. ${AGENT.cea} · ${AGENT.agency} (Licence ${AGENT.licence}) · ${AGENT.phone}</div>
       ${full ? `<b>Important notice.</b> ${NOTICE}` : '<b>Indicative estimates only — not an offer, approval or guarantee of any loan, and not mortgage advice; consult a banker or mortgage broker.</b> See the important notice on the cover page.'}</footer>`;
 
-    const bodyFor = { loan, afford, sale, buy };
+    const bodyFor = { loan, afford, sale, buy, timeline };
     const titleFor = Object.fromEntries(SECTIONS);
     const pages = keys.map((k, i) => `<div class="rp">${head(titleFor[k])}${bodyFor[k]}${i === keys.length - 1 ? notes : ''}${foot(!withCover)}</div>`);
 
@@ -1403,7 +1491,7 @@
     if (!p || t.matches('select')) return;
     let v = t.value;
     if ('money' in t.dataset) v = v.replace(/[^0-9]/g, '');
-    else if (t.type !== 'date') v = v.replace(/[^0-9.]/g, '');
+    else if (t.type !== 'date' && t.type !== 'month') v = v.replace(/[^0-9.]/g, '');
     if (p === 'buy.legal' || p === 'buy.valFee' || p === 'sale.legal' || p === 'buy.levy') v = v === '' ? null : v;
     setPath(p, v);
     update(false);
