@@ -622,8 +622,8 @@
       ${fresh ? `<div class="block">
         <p class="block-title">Payment timeline</p>
         <div class="grid2">
-          <label class="f"><span>OTP date</span><input type="date" data-path="buy.otp" value="${esc(s.otp || isoToday())}"></label>
-          <label class="f"><span>Expected TOP</span><input type="month" data-path="buy.top" value="${esc(s.top || topDefault())}"><small>Rough is fine</small></label>
+          <label class="f"><span>OTP date</span><input type="date" data-path="buy.otp" value="${esc(s.otp || '')}"><small>Blank = rough timing only</small></label>
+          <label class="f"><span>Expected TOP</span><input type="month" data-path="buy.top" value="${esc(s.top || '')}"><small>Blank = about 4¼ years after OTP</small></label>
         </div>
       </div>` : ''}
       ${levyBlock(c)}`;
@@ -947,7 +947,7 @@
     if (grantsIn > 30000 && sl.on && sl.type === 'hdb') flags.push(['warn', `${money(grantsIn)} of grants looks high for someone selling an HDB flat. If that flat was subsidised (bought from HDB, or resale with a grant), she is a second-timer and usually qualifies only for the Proximity grant: $30,000 living with parents or children, $20,000 within 4km. A first-timer married to a second-timer can get $40,000 (2–4 room) or $25,000 (5-room+).`]);
     if (levy > 0) flags.push(['info', `HDB resale levy of <b>${money(levy)}</b> applies to this ${ec ? 'EC' : 'flat'} as a second subsidised home. It must be paid in cash, not CPF or the loan. If the old flat is sold after collecting the new keys, HDB deducts it from the sale proceeds.`]);
     if (ec && !s.levyOn && sl.on && sl.type === 'hdb') flags.push(['warn', 'Check the resale levy: if the HDB flat being sold was bought from HDB (BTO, SBF, DBSS) or with a CPF Housing Grant, this EC is a second subsidised home and a levy of $15,000–$55,000 applies. Switch it on in Purchase.']);
-    if (fresh) flags.push(['info', 'New launch: the loan is drawn in stages as the building progresses, so instalments start low and reach the full amount once the last 15% is drawn at CSC, about a year after TOP.']);
+    if (fresh) flags.push(['info', 'New launch: the loan is drawn in stages as the building progresses, so instalments start low and reach the full amount once the last 15% is drawn at CSC, about 6 months after TOP.']);
     if (lowTier && agesKnown) {
       const keepTo = hdb ? 25 : 30;
       flags.push(['warn', `A ${yrs(tenure)} tenure ${tenure > keepTo ? `is over ${keepTo} years` : `runs past age 65 (average age ${iwaa.toFixed(1)})`}, so LTV drops to ${pct(ltv, 0)} and the cash downpayment rises to ${pct(minCashPct, 0)}.${cap75 >= 1 ? ` Keep it to ${yrs(cap75)} for the full LTV.` : ''}`]);
@@ -1151,14 +1151,14 @@
     if (sch) {
       html += `<div class="card cost"><div class="card-head"><span>Payment timeline</span><em>New launch · rough</em><button type="button" class="card-export" data-export="timeline" title="Export this section as a PDF">Export</button></div>
         <table class="rows">
-          ${row('Paid before the loan starts', money(sch.beforeLoan), 'total', `Downpayment ${money(c.at.D)} + stamp duty${sch.firstLoan ? ` · loan starts ~ ${fmtMonth(sch.firstLoan.d)}` : ''}`)}
-          ${row('Instalment at TOP', money(sch.instTop), '', `~ ${fmtMonth(sch.top)}`)}
-          ${row('Full instalment', money(sch.instFull), 'total', `After CSC, ~ ${fmtMonth(sch.csc)} · ${money(c.at.loan)} at ${c.rate}%`)}
+          ${row('Paid before the loan starts', money(sch.beforeLoan), 'total', `Downpayment ${money(c.at.D)} + stamp duty${sch.firstLoan ? ` · loan starts ${sch.firstLoan.d ? `~ ${fmtMonth(sch.firstLoan.d)}` : `at the ${sch.firstLoan.ev.toLowerCase()} stage`}` : ''}`)}
+          ${row('Instalment at TOP', money(sch.instTop), '', sch.top ? `~ ${fmtMonth(sch.top)}` : 'Once 85% of the price is paid')}
+          ${row('Full instalment', money(sch.instFull), 'total', `After CSC${sch.csc ? `, ~ ${fmtMonth(sch.csc)}` : ''} · ${money(c.at.loan)} at ${c.rate}%`)}
         </table>
         <ol class="tl">${sch.steps.map((x, i) => `<li class="${x.amt ? 'pay' : ''}"><i>${i + 1}</i>
-          <div class="tl-e"><span class="tl-d">${tlDate(x)}</span><b>${x.ev}</b>${x.sub ? `<small>${x.sub}</small>` : ''}</div>
+          <div class="tl-e"><span class="tl-d">${x.dateLbl}</span><b>${x.ev}</b>${x.sub ? `<small>${x.sub}</small>` : ''}</div>
           <div class="tl-a">${x.amt ? `<small>${x.tag}</small><b>${money(x.amt)}</b>` : ''}</div></li>`).join('')}</ol>
-        <p class="fine" style="padding:0 16px 14px">Construction dates are estimates spread to the expected TOP. Progress depends on the developer. Legal fees are paid to the lawyer in stages.</p>
+        <p class="fine" style="padding:0 16px 14px">Construction timing is a rough estimate. Actual progress depends on the developer. Legal fees are paid to the lawyer in stages.</p>
       </div>`;
     }
     el.innerHTML = html + flagsHtml(c);
@@ -1187,51 +1187,56 @@
   // New launch: the Progressive Payment Scheme. Legal steps are dated from the OTP; construction stages are spread
   // between the OTP and the expected TOP, so those dates are rough. The client pays the downpayment stages first,
   // then the bank disburses the rest — instalments grow with each disbursement.
+  // Stage, share of price, months after the OTP (rough: foundation ~15 months, framework 9 months on, then ~6 months a stage), rough timing in words.
   const PPS = [
-    ['Foundation work done', 0.10, 0.15],
-    ['Reinforced concrete framework', 0.10, 0.35],
-    ['Partition walls', 0.05, 0.55],
-    ['Roof and ceiling', 0.05, 0.65],
-    ['Doors, windows, wiring and plumbing', 0.05, 0.75],
-    ['Car park, roads and drains', 0.05, 0.85],
-    ['TOP — keys handed over', 0.25, 1],
+    ['Foundation work done', 0.10, 15, 'About 12 to 18 months after the OTP'],
+    ['Reinforced concrete framework', 0.10, 24, 'About 9 months after foundation'],
+    ['Partition walls', 0.05, 30, 'About 6 months after the stage before'],
+    ['Roof and ceiling', 0.05, 36, 'About 6 months after the stage before'],
+    ['Doors, windows, wiring and plumbing', 0.05, 42, 'About 6 months after the stage before'],
+    ['Car park, roads and drains', 0.05, 48, 'About 6 months after the stage before'],
+    ['TOP — keys handed over', 0.25, 51, "About 4 to 4½ years after the OTP — use the developer's expected TOP"],
   ];
+  const TOP_MONTHS = 51, CSC_MONTHS = 6;
   const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  const addMonths = (d, n) => new Date(d.getFullYear(), d.getMonth() + n, 1);
   const fmtMonth = d => `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
-  const otpDate = () => parseDate(has(state.buy.otp) ? state.buy.otp : isoToday());
-  const topDefault = () => { const d = addYears(otpDate(), 4); return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`; };
   function schedule(c) {
     const at = c.at;
     if (!c.fresh || !at) return null;
-    const P = at.P, otp = otpDate();
-    const [ty, tm] = (/^\d{4}-\d{2}$/.test(state.buy.top || '') ? state.buy.top : topDefault()).split('-').map(Number);
-    let top = new Date(ty, tm - 1, 1);
-    if (top < addDays(otp, 180)) top = addYears(otp, 4);
-    const span = top - otp;
+    const P = at.P;
+    const otp = /^\d{4}-\d{2}-\d{2}$/.test(state.buy.otp || '') ? parseDate(state.buy.otp) : null;
+    let top = /^\d{4}-\d{2}$/.test(state.buy.top || '') ? new Date(+state.buy.top.slice(0, 4), +state.buy.top.slice(5) - 1, 1) : null;
+    if (otp && top && top < addDays(otp, 180)) top = null;
+    if (otp && !top) top = addMonths(otp, TOP_MONTHS);
+    const csc = top ? addMonths(top, CSC_MONTHS) : null;
     let clientLeft = at.D, drawn = 0;
     const pay = amt => { const you = Math.min(amt, clientLeft); clientLeft -= you; const bank = amt - you; drawn += bank; return { you, bank, inst: drawn ? pmt(c.rate, c.tenure, drawn) : 0 }; };
     const cashExtra = Math.max(0, Math.min(0.15 * P, at.minCash - 0.05 * P));
     const tag = (pc, x) => `${pc}% · ${x.bank && x.you ? 'CPF/cash + loan' : x.bank ? (c.hdbLoan ? 'HDB loan' : 'Bank loan') : 'CPF or cash'}`;
+    // d = a date when one is known; when = the rough timing in words, used in place of the date when blank
     const steps = [
-      { d: otp, ev: 'Option to Purchase', sub: 'Booking fee paid on the day', amt: 0.05 * P, tag: '5% · Cash', ...pay(0.05 * P) },
-      { d: addDays(otp, 14), ev: 'S&P agreement received', sub: 'Developer sends it within 2 weeks' },
-      { d: addDays(otp, 35), ev: 'Sign the S&P agreement', sub: 'Within 3 weeks of receiving it', amt: 0.15 * P,
+      { d: otp, ev: 'Option to Purchase', when: 'On the day of booking', amt: 0.05 * P, tag: '5% · Cash', ...pay(0.05 * P) },
+      { d: otp && addDays(otp, 14), ev: 'S&P agreement received', when: 'Within 2 weeks of the OTP' },
+      { d: otp && addDays(otp, 35), ev: 'Sign the S&P agreement', when: 'Within 3 weeks of receiving the S&P', amt: 0.15 * P,
         tag: cashExtra > 0.5 ? `15% · at least ${money(cashExtra)} cash` : '15% · CPF or cash', ...pay(0.15 * P) },
-      { d: addDays(otp, 49), ev: 'Stamp duty', sub: `Within 14 days of signing${at.ABSDamt ? ` · BSD ${money(at.BSD)} + ABSD ${money(at.ABSDamt)}` : ''}`,
-        amt: at.BSD + at.ABSDamt, tag: `${at.ABSDamt ? 'BSD + ABSD' : 'BSD'} · CPF or cash` },
+      { d: otp && addDays(otp, 49), ev: 'Stamp duty', when: 'Within 14 days of signing the S&P',
+        amt: at.BSD + at.ABSDamt, tag: `${at.ABSDamt ? 'BSD + ABSD' : 'BSD'} · CPF or cash`, note: at.ABSDamt ? `BSD ${money(at.BSD)} + ABSD ${money(at.ABSDamt)}` : '' },
     ];
-    PPS.forEach(([ev, f, w]) => { const x = pay(f * P); steps.push({ d: new Date(otp.getTime() + w * span), approx: true, ev, amt: f * P, tag: tag(f * 100, x), ...x }); });
-    const csc = new Date(top.getFullYear() + 1, top.getMonth(), 1);
+    PPS.forEach(([ev, f, m, when]) => {
+      const x = pay(f * P);
+      const d = ev.startsWith('TOP') ? top : otp && top ? new Date(otp.getTime() + (m / TOP_MONTHS) * (top - otp)) : null;
+      steps.push({ d, approx: true, ev, when, amt: f * P, tag: tag(f * 100, x), ...x });
+    });
     const xc = pay(0.15 * P);
-    steps.push({ d: csc, approx: true, ev: 'Certificate of Statutory Completion', amt: 0.15 * P, tag: tag(15, xc), ...xc });
+    steps.push({ d: csc, approx: true, ev: 'Certificate of Statutory Completion', when: 'About 6 months after TOP', amt: 0.15 * P, tag: tag(15, xc), ...xc });
     steps.forEach(x => {
-      if (x.ev.startsWith('Cert')) x.sub = 'Usually 1 to 2 years after TOP';
-      if (x.bank) x.sub = [x.sub, `${x.you ? `client ${money(x.you)} + ` : ''}loan ${money(x.bank)} · instalment ≈ ${money(x.inst)}/mth`].filter(Boolean).join(' · ');
+      x.dateLbl = x.d ? (x.approx ? `~ ${fmtMonth(x.d)}` : fmtDate(x.d)) : x.when;
+      x.sub = [x.d ? x.when : '', x.note, x.bank ? `${x.you ? `client ${money(x.you)} + ` : ''}loan ${money(x.bank)} · instalment ≈ ${money(x.inst)}/mth` : ''].filter(Boolean).join(' · ');
     });
     const firstLoan = steps.find(x => x.bank);
     return { steps, top, csc, firstLoan, instTop: steps.find(x => x.ev.startsWith('TOP')).inst, instFull: xc.inst, beforeLoan: at.D + at.BSD + at.ABSDamt };
   }
-  const tlDate = x => x.approx ? `~ ${fmtMonth(x.d)}` : fmtDate(x.d);
 
   const flagsHtml = c => {
     if (!c.flags.length) return '';
@@ -1382,13 +1387,13 @@
     let timeline = '';
     const sch = schedule(c);
     if (sch) {
-      const stepL = x => L(x.ev, x.amt ? money(x.amt) : '', '', [tlDate(x), x.amt ? x.tag : '', x.sub].filter(Boolean).join(' · '));
+      const stepL = x => L(x.ev, x.amt ? money(x.amt) : '', '', [x.dateLbl, x.amt ? x.tag : '', x.sub].filter(Boolean).join(' · '));
       timeline = `<div class="rp-answer"><div><div class="k">Full monthly instalment</div><div class="v">${money(sch.instFull)}</div></div>
         <p>The client pays <b>${money(sch.beforeLoan)}</b> (downpayment and stamp duty) before the loan starts. The loan is then drawn as the building progresses,
         so the instalment grows to about <b>${money(sch.instTop)}</b> at TOP and <b>${money(sch.instFull)}</b> once fully drawn.</p></div>
         ${sec('Before construction', sch.steps.slice(0, 4).map(stepL).join(''))}
-        ${sec('During construction — dates are rough', sch.steps.slice(4).map(stepL).join(''))}
-        <ul class="rp-notes"><li>Construction dates are estimates spread to the expected TOP; actual progress depends on the developer. Legal fees are paid to the lawyer in stages.</li></ul>`;
+        ${sec('During construction — timing is rough', sch.steps.slice(4).map(stepL).join(''))}
+        <ul class="rp-notes"><li>Construction timing is a rough estimate; actual progress depends on the developer. Legal fees are paid to the lawyer in stages.</li></ul>`;
     }
 
     const warn = c.flags.filter(f => f[0] === 'warn'), rest = c.flags.filter(f => f[0] !== 'warn').slice(0, 3);
