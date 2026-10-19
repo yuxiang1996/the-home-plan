@@ -316,6 +316,29 @@
   html:not(.tips) .rows td small, html:not(.tips) .hero .why, html:not(.tips) .note, html:not(.tips) .tl-a small,
   html:not(.tips) .tl-e small:not(:first-of-type), html:not(.tips) .ways > .fine, html:not(.tips) .tl-stats small { display: none; }
 
+  /* Light theme, softened for the screen: warmer, dimmer paper and slightly softer ink.
+     Screen only — the printed report keeps the crisp white page. */
+  @media screen {
+    :root:not([data-theme="dark"]) {
+      --ink: #222c28; --muted: #5f6965; --faint: #8e9692; --line: #dad4c6;
+      --bg: #e6e1d5; --card: #f4f0e7; --field: #ece7dc;
+      --shadow: 0 1px 2px rgba(40, 30, 10, .06), 0 8px 24px -10px rgba(40, 30, 10, .16);
+    }
+    :root:not([data-theme="dark"]) input:focus, :root:not([data-theme="dark"]) select:focus { background-color: #f8f5ee; }
+    :root:not([data-theme="dark"]) .tl-chart, :root:not([data-theme="dark"]) .tl-side { background: #f7f4ec; }
+    :root:not([data-theme="dark"]) .more[open] > summary { background: var(--card); }
+    :root:not([data-theme="dark"]) .seg-toggle { background: #e3ddd0; }
+    :root:not([data-theme="dark"]) .seg-toggle button.on { background: #faf8f2; }
+    :root:not([data-theme="dark"]) .rows td, :root:not([data-theme="dark"]) .tl li, :root:not([data-theme="dark"]) .more > .rows { border-color: #e4dfd3; }
+    :root:not([data-theme="dark"]) .rows tr.sub td { background: #ede8de; }
+    :root:not([data-theme="dark"]) .rows tr.total td { background: #ebe6db; }
+    :root:not([data-theme="dark"]) .block, :root:not([data-theme="dark"]) .switch-row + .switch-row { border-top-color: #e2dccf; }
+    :root:not([data-theme="dark"]) input:disabled { background-color: #e6e1d6; }
+    :root:not([data-theme="dark"]) #tl-chart [stroke="#fff"] { stroke: #f7f4ec; }
+    :root:not([data-theme="dark"]) #tl-chart [fill="#fff"] { fill: #f7f4ec; }
+    :root:not([data-theme="dark"]) #tl-chart [stroke="#efece4"] { stroke: #e6e0d3; }
+  }
+
   /* Dark theme: screen only, so the printed report always stays light */
   @media screen {
     :root[data-theme="dark"] {
