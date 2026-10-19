@@ -647,7 +647,7 @@
     b: [blankBuyer(), blankBuyer()],
     buy: { on: true, type: 'private', mode: 'resale', price: '', val: '', lease: '', loan: 'bank', rate: '2.0', stress: '4.0', tenure: '', grants: '', keep: '', legal: null, hdbLegal: false, valFee: null, other: '', levyOn: false, levyType: '4', levySingle: false, levy: null, grantPHG: false, cashUse: '' },
     tl: tlDefaults(),
-    sale: { on: false, type: 'hdb', owner: 'both', price: '', loan: '', cpf: [{ p: '', i: '' }, { p: '', i: '' }], first: true, repaid: true, hdb2nd: true, contra: true, bought: '', legal: null, hdbLegal: false, penalty: '', share: '', coOwner: false, coP: '', coI: '' },
+    sale: { on: false, type: 'hdb', owners: 1, owner: '0', price: '', loan: '', cpf: [{ p: '', i: '' }, { p: '', i: '' }], first: true, repaid: true, hdb2nd: true, contra: true, bought: '', legal: null, hdbLegal: false, penalty: '', share: '', coOwner: false },
   });
   let state;
   try {
@@ -661,6 +661,16 @@
     state.b.forEach((b, i) => { const raw = ((saved && saved.b) || [])[i] || {}; if (!('other' in raw) && (num(b.owned) > 0 || num(b.loans) > 0 || num(b.propLoans) > 0)) b.other = true; });
     // older saves kept one combined CPF figure for the sale
     if (!Array.isArray(state.sale.cpf)) state.sale.cpf = [{ p: '', i: '' }, { p: '', i: '' }];
+    // Saves from before "1 owner / 2 owners": two owners if both buyers owned it or a co-owner was set.
+    if (saved && saved.sale && !('owners' in saved.sale)) {
+      state.sale.owners = (state.n === 2 && saved.sale.owner === 'both') || saved.sale.coOwner ? 2 : 1;
+      if (state.sale.owner === 'both') state.sale.owner = '0';
+    }
+    // Owner 2's CPF now lives in cpf[1] whether or not they're buying (it used to be coP/coI for a co-owner).
+    if ((has(state.sale.coP) || has(state.sale.coI)) && !has(state.sale.cpf[1].p) && !has(state.sale.cpf[1].i)) {
+      state.sale.cpf[1] = { p: state.sale.coP || '', i: state.sale.coI || '' };
+    }
+    delete state.sale.coP; delete state.sale.coI;
     if (saved && saved.sale && ('cpfP' in saved.sale)) { state.sale.cpf[0] = { p: saved.sale.cpfP || '', i: saved.sale.cpfI || '' }; delete state.sale.cpfP; delete state.sale.cpfI; }
   } catch { state = defaults(); }
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} };
@@ -792,22 +802,25 @@
     if (!s.on) { el.innerHTML = head + '<p class="off-hint">Selling a property? Switch on. If not, carry on to the buyer profile below.</p>'; return; }
     const owners = saleOwners();
     const hdbLoan = state.buy.type === 'hdb' && state.buy.loan === 'hdb';
-    const cpfFields = owners.map(i => `
-        ${owners.length > 1 || state.n > 1 || s.coOwner ? `<p class="block-title f full" style="margin:6px 0 -6px">${state.n > 1 ? `Buyer ${i + 1}` : 'Client'} CPF</p>` : ''}
-        ${moneyField(`sale.cpf.${i}.p`, 'CPF principal used')}
-        ${moneyField(`sale.cpf.${i}.i`, 'CPF accrued interest')}`).join('');
+    const two = Number(s.owners) === 2;
+    const cpfPair = (lbl, pp, ip) => `${lbl ? `<p class="block-title f full" style="margin:6px 0 -6px">${lbl}</p>` : ''}
+        ${moneyField(pp, 'CPF principal used')}
+        ${moneyField(ip, 'CPF accrued interest')}`;
+    const o1 = owners[0];
+    const cpfFields = !two ? cpfPair(state.n > 1 ? `Buyer ${o1 + 1} CPF` : '', `sale.cpf.${o1}.p`, `sale.cpf.${o1}.i`)
+      : cpfPair(`Owner 1 CPF${state.n > 1 ? ' (Buyer 1)' : ''}`, 'sale.cpf.0.p', 'sale.cpf.0.i')
+        + cpfPair(`Owner 2 CPF (${owner2Buys() ? 'Buyer 2' : 'not buying'})`, 'sale.cpf.1.p', 'sale.cpf.1.i');
     el.innerHTML = `${head}
       <div class="sub-toggle">${seg('sale.type', [['hdb', 'HDB'], ['private', 'Private / EC']], 'Type of home sold')}</div>
-      ${state.n > 1 ? `<div class="f" style="margin-bottom:14px"><span>Owned by</span>${wide(seg('sale.owner', [['0', 'Buyer 1'], ['1', 'Buyer 2'], ['both', 'Both']], 'Owned by'))}</div>` : ''}
-      ${toggle('sale.coOwner', 'Co-owned with someone who isn\u2019t buying', 'e.g. an ex-spouse in a divorce. Their CPF refund goes back to their own OA, and the cash is split')}
+      <div class="f" style="margin-bottom:10px"><span>Owners</span>${wide(seg('sale.owners', [[1, '1 owner'], [2, '2 owners']], 'Number of owners'))}</div>
+      ${!two && state.n > 1 ? `<div class="f" style="margin-bottom:14px"><span>Owned by</span>${wide(seg('sale.owner', [['0', 'Buyer 1'], ['1', 'Buyer 2']], 'Owned by'))}</div>` : ''}
+      ${two ? toggle('sale.coOwner', 'Co-owned with someone who isn\u2019t buying', 'e.g. an ex-spouse in a divorce. Their CPF refund goes back to their own OA, and the cash is split') : ''}
+      ${two && !s.coOwner && state.n === 1 ? '<p class="impact">Only 1 buyer in section 2, so Owner 2\u2019s CPF refund goes back to their own OA. Set 2 buyers if both are buying.</p>' : ''}
       <div class="grid2" style="margin-top:6px">
         ${moneyField('sale.price', 'Selling price')}
         ${moneyField('sale.loan', 'Outstanding loan')}
         ${cpfFields}
-        ${s.coOwner ? `<p class="block-title f full" style="margin:6px 0 -6px">Co-owner CPF (not buying)</p>
-        ${moneyField('sale.coP', 'CPF principal used')}
-        ${moneyField('sale.coI', 'CPF accrued interest')}` : ''}
-        ${moneyField('sale.share', "Client's share of cash proceeds", { full: true, ph: s.coOwner ? 'Half' : 'All of it', hint: s.coOwner ? 'Blank = half. Type the actual split from the settlement or court order' : 'Only if she receives part of the cash. Blank = all' })}
+        ${moneyField('sale.share', "Client's share of cash proceeds", { full: true, ph: two && s.coOwner ? 'Half' : 'All of it', hint: two && s.coOwner ? 'Blank = half. Type the actual split from the settlement or court order' : 'Only if she receives part of the cash. Blank = all' })}
         ${s.type === 'private' ? `<label class="f full"><span>Date bought (OTP exercised)</span>
           <input type="date" data-path="sale.bought" value="${esc(s.bought)}" max="${isoToday()}"><small>For Seller's Stamp Duty</small></label>` : ''}
       </div>
@@ -896,7 +909,10 @@
   }
 
   const isNew = () => state.buy.type === 'ec' || (state.buy.type === 'private' && state.buy.mode === 'new');
-  const saleOwners = () => state.n === 1 || state.sale.owner === 'both' ? [...Array(state.n).keys()] : [Number(state.sale.owner)];
+  const owner2Buys = () => Number(state.sale.owners) === 2 && state.n === 2 && !state.sale.coOwner;
+  const owner2Out = () => Number(state.sale.owners) === 2 && !owner2Buys();
+  const saleOwners = () => owner2Buys() ? [0, 1]
+    : Number(state.sale.owners) === 1 && state.n === 2 ? [state.sale.owner === '1' ? 1 : 0] : [0];
   // HDB only acts for buyers on an HDB loan, and for HDB sellers with no bank loan to redeem.
   const buyLegalDefault = () => state.buy.type === 'hdb' && state.buy.loan === 'hdb' && state.buy.hdbLegal ? LEGAL_HDB : LEGAL;
   const saleLegalDefault = () => state.sale.type === 'hdb' && state.sale.hdbLegal ? LEGAL_HDB : LEGAL;
@@ -940,7 +956,8 @@
       const owed = sum(owedBy);
       const grossP = price - loan;
       // A co-owner who isn't buying (e.g. ex-spouse) is refunded too, into their own OA.
-      const coOwed = sl.coOwner ? num(sl.coP) + num(sl.coI) : 0;
+      const out2 = owner2Out();
+      const coOwed = out2 ? num(sl.cpf[1].p) + num(sl.cpf[1].i) : 0;
       const owedAll = owed + coOwed;
       const cpfBackAll = clamp(grossP, 0, owedAll);
       const scale = owedAll ? cpfBackAll / owedAll : 0;
@@ -968,14 +985,14 @@
       // the seller keeps the higher of $25,000 or half, the rest must cut the new loan.
       // A divorce or a co-owner who isn't buying: the client only gets her share, and HDB applies
       // the rule to that share (resale terms clause 24.4(c), "depending on the manner of holding").
-      const share = has(sl.share) ? Math.max(0, num(sl.share)) : sl.coOwner ? Math.max(0, cash) / 2 : null;
+      const share = has(sl.share) ? Math.max(0, num(sl.share)) : out2 && sl.coOwner ? Math.max(0, cash) / 2 : null;
       const shareTyped = has(sl.share);
       const clientCash = share != null ? share : cash;
       const ruleCash = share != null ? share : Math.max(0, grossP - cpfBackAll);
       const rule50 = hdbLoan && sl.hdb2nd;
       const keepCash = ruleCash <= 25000 ? ruleCash : Math.max(25000, ruleCash / 2);
       const mustUse = rule50 ? Math.min(Math.max(0, clientCash), ruleCash - keepCash) : 0;
-      sale = { price, loan, owed, owedBy, cpfBack, backBy, agent, legal, ssd, ssdRate, ssdNote, penalty, misc, cash, share, shareTyped, clientCash, coOwner: sl.coOwner, coOwed, coBack, cpfBackAll, shortCPF: owedAll - cpfBackAll, rule50, ruleCash, keepCash, mustUse };
+      sale = { price, loan, owed, owedBy, cpfBack, backBy, agent, legal, ssd, ssdRate, ssdNote, penalty, misc, cash, share, shareTyped, clientCash, coOwner: out2, coOwed, coBack, cpfBackAll, shortCPF: owedAll - cpfBackAll, rule50, ruleCash, keepCash, mustUse };
       if (price && grossP < 0) flags.push(['warn', `The selling price doesn't cover the outstanding loan. You will need ${money(-grossP)} in cash to redeem it.`]);
       if (price && sale.shortCPF > 0.5 && grossP >= 0) flags.push(['info', `Sale proceeds cover only ${money(cpfBack)} of the ${money(owed)} CPF to refund. For a sale at market value, CPF does not ask you to top up the shortfall.`]);
     }
@@ -1168,7 +1185,8 @@
     if ((hdb || ec) && parent && has(B[0].age) && ages[0] < 21) flags.push(['warn', 'Buyers must be at least 21.']);
     if (hdb && parent) flags.push(['info', 'Divorced or widowed parent with children: HDB treats the household as a family — $16,000 HDB loan income ceiling and no age-35 rule. If ex-spouses share care and control, they must agree who lists the child on their HFE letter; a child can be on only one.']);
     if (ec && state.n === 1 && !parent) flags.push(['warn', 'Singles cannot buy a new EC. A divorced or widowed parent with children under their care can.']);
-    if (sale && sale.coOwner) flags.push(['info', `Co-owner not buying: ${money(sale.coBack)} of CPF is refunded to the co-owner's own OA and isn't available to the client. The client ${sale.shareTyped ? 'receives' : 'is assumed to receive half the cash,'} ${money(sale.clientCash)}${sale.shareTyped ? '' : ' — type the actual split if it differs'}.`]);
+    if (sale && sale.coOwner && !sl.coOwner) flags.push(['info', `Owner 2 isn't buying: ${money(sale.coBack)} of CPF is refunded to their own OA and isn't available for the next home.`]);
+    if (sale && sale.coOwner && sl.coOwner) flags.push(['info', `Co-owner not buying: ${money(sale.coBack)} of CPF is refunded to the co-owner's own OA and isn't available to the client. The client ${sale.shareTyped ? 'receives' : 'is assumed to receive half the cash,'} ${money(sale.clientCash)}${sale.shareTyped ? '' : ' — type the actual split if it differs'}.`]);
     if (hdbLoan) {
       if (!anySC) flags.push(['warn', 'An HDB loan needs at least one Singapore Citizen buyer. Use a bank loan.']);
       if (grossTotal > HDB_CEILING[hh]) flags.push(['warn', `Income of ${money(grossTotal)} is above the HDB loan ceiling of ${money(HDB_CEILING[hh])} (${hh === 'single' ? 'singles' : 'households'}, from 24 Aug 2026). Use a bank loan.`]);
@@ -1219,7 +1237,7 @@
     // Selling only: drop the purchase notes, keep the sale's own.
     if (!s.on) {
       flags.splice(saleFlags);
-      if (sale && sale.coOwner) flags.push(['info', `Co-owner: ${money(sale.coBack)} of CPF is refunded to the co-owner's own OA. The client ${sale.shareTyped ? 'receives' : 'is assumed to receive half the cash,'} ${money(sale.clientCash)}${sale.shareTyped ? '' : ' — type the actual split if it differs'}.`]);
+      if (sale && sale.coOwner && sl.coOwner) flags.push(['info', `Co-owner: ${money(sale.coBack)} of CPF is refunded to the co-owner's own OA. The client ${sale.shareTyped ? 'receives' : 'is assumed to receive half the cash,'} ${money(sale.clientCash)}${sale.shareTyped ? '' : ' — type the actual split if it differs'}.`]);
     }
     return { whoOn, loanOn, B, hdb, ec, hdbLoan, fresh, iwaa, youngest, agesKnown, income, grossTotal, tenure, autoTenure, tenureHint, cap75, capMax, lowTier,
       ltv, minCashPct, stress, rate, incomeLoan, incomeLoanR, incomeRule, assessed, tdsrRoom, msrRoom, allowance, useMSR, loansOut, leaseFactor, absdRate, absdNote, absdRefund,
@@ -2194,7 +2212,7 @@
     if (!b) return;
     const p = b.dataset.set;
     let v = b.dataset.val;
-    if (p === 'n') v = Number(v);
+    if (p === 'n' || p === 'sale.owners') v = Number(v);
     setPath(p, v);
     if (p === 'buy.type' || p === 'buy.loan' || p === 'buy.mode') { state.buy.tenure = ''; state.buy.legal = null; state.buy.valFee = null; }
     if (p === 'sale.type') state.sale.legal = null;
