@@ -272,9 +272,40 @@
   .dlg-row em { margin-left: auto; font-style: normal; font-weight: 500; font-size: 12px; color: var(--faint); }
   .dlg-row.off { opacity: .55; cursor: default; }
   .dlg-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+  /* Section 5: sale & purchase timeline */
+  .panel.tlp { --c: var(--plum); --soft: var(--plum-soft); margin-top: 20px; }
+  .tl-head-r { display: flex; align-items: center; gap: 10px; }
+  .tl-export { min-height: 34px; padding: 6px 14px; font-size: 13px; }
+  .tl-chart { border: 1px solid var(--line); border-radius: 12px; background: #fff; margin: 0 0 16px; overflow: hidden; }
+  .tl-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tl-scroll svg { display: block; }
+  .tl-sum { display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 10px 14px 12px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+  .tl-sum b { color: var(--ink); }
+  .tl-sides { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  @media (min-width: 820px) { .tl-sides { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .tl-side { border: 1px solid var(--line); border-top: 4px solid var(--c); border-radius: 12px; padding: 12px 14px 14px; background: #fff; }
+  .tl-side.sale { --c: var(--sale); --soft: var(--sale-soft); }
+  .tl-side.purchase { --c: var(--buy); --soft: var(--buy-soft); }
+  .tl-side-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .tl-side-head h3 { margin: 0; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--c); }
+  .tl-side .seg-toggle { margin: 12px 0 4px; }
+  .tl-side .f { margin: 10px 0 12px; }
+  .tl-side.off .tl-side-head + p { margin: 6px 0 0; }
+  .tl-seg { padding: 10px 0; border-top: 1px dashed var(--line); }
+  .tl-seg-name { font-size: 13px; margin-bottom: 6px; font-weight: 500; }
+  .tl-seg-name i { font-style: normal; color: var(--faint); padding: 0 4px; }
+  .tl-seg-in { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tl-seg-in input[data-tl-k=v] { flex: 0 0 76px; width: 76px; }
+  .tl-seg-in select { flex: 0 1 112px; width: auto; }
+  .tl-seg-in select[data-tl-k=basis] { flex: 1 1 150px; }
+  .tl-seg-in input[type=date] { flex: 1 0 150px; width: auto; }
+  .tl-seg-in input[type=date]:disabled { opacity: .5; }
+  .tl-seg.ext { background: var(--soft); border-radius: 10px; padding: 10px 12px; border-top: 0; margin-top: 4px; }
+  .tl-side .switch-row { border-top: 1px dashed var(--line); }
   #report { display: none; }
   /* Margin 0 stops the browser printing its own date, title and URL in the page margins. */
   @page { size: A4 portrait; margin: 0; }
+  @page land { size: A4 landscape; margin: 0; }
   @media print {
     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     html, body { background: #fff; }
@@ -377,6 +408,33 @@
     .rp-notes li.good::before { background: var(--sale); }
     .rp-foot { margin-top: 18px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 9px; color: var(--muted); line-height: 1.5; break-inside: avoid; }
     .rp-foot b { color: var(--ink); }
+    /* Timeline page: landscape */
+    .rp.rp-land { page: land; padding: 7mm 12mm 5mm; }
+    .rp-land .rp-foot { margin-top: 6px; padding-top: 5px; }
+    .tlr-chart { border: 1px solid var(--line); border-radius: 8px; margin: 6px 0; break-inside: avoid; }
+    .tlr-svg { display: block; width: 100% !important; height: auto !important; }
+    .tlr-gaps { display: flex; gap: 8px; margin-bottom: 8px; break-inside: avoid; }
+    .tlr-gap { flex: 1; border: 1px solid var(--line); border-left: 4px solid var(--gap); border-radius: 8px; padding: 5px 10px; }
+    .tlr-gap.e { border-left-color: var(--plum); }
+    .tlr-gap small { display: block; color: var(--muted); font-size: 8.5px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
+    .tlr-gap b { font-size: 11.5px; }
+    .tlr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; break-inside: avoid; }
+    .tlr-grid.n1 { grid-template-columns: 1fr; }
+    .tlr-card { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+    .tlr-head { display: flex; justify-content: space-between; align-items: baseline; padding: 5px 10px; color: #fff; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; font-size: 10.5px; }
+    .tlr-head em { font-style: normal; letter-spacing: 0; text-transform: none; font-weight: 600; }
+    .tlr-card.sale .tlr-head { background: var(--sale); }
+    .tlr-card.purchase .tlr-head { background: var(--buy); }
+    .tlr-card table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+    .tlr-card th { text-align: left; font-size: 8px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: 4px 10px; border-bottom: 1px solid var(--line); }
+    .tlr-card td { padding: 1.5px 10px; border-bottom: 1px solid #f0f1ef; font-size: 9.5px; }
+    .tlr-card td:first-child { font-weight: 600; }
+    .tlr-card td:nth-child(2) { white-space: nowrap; }
+    .tlr-card tr.ext td { font-style: italic; }
+    .tlr-card tr.key td { background: #fbf6ea; }
+    .tlr-card tr.pending td { color: #a3aaa7; }
+    .tlr-total { padding: 4px 10px; background: #fafaf8; font-size: 9.5px; }
+    .tlr-disc { margin: 8px 0 0; font-size: 9.5px; border: 1px solid var(--line); border-left: 4px solid var(--gap); border-radius: 6px; padding: 5px 10px; break-inside: avoid; }
     .rp-sign { font-size: 10px; color: var(--ink); margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px dashed var(--line); }
   }
 </style>
@@ -406,6 +464,8 @@
     </div>
     <aside class="results" id="results" aria-live="polite"></aside>
   </div>
+
+  <section class="panel tlp" id="panel-tl"></section>
 
   <p class="disclaimer"><b>Important notice:</b> All figures are indicative estimates for reference only. They are not an offer, approval or guarantee of any loan, and not financial, legal or tax advice. Actual amounts are subject to HDB or the bank's assessment, valuation and prevailing rules.</p>
   <p class="note">Rules as at Oct 2026: TDSR 55% and MSR 30% at a 4% stress rate (HDB loan: 3% floor), LTV 75% / 55% by tenure and age, BSD and ABSD rates from IRAS, SSD 4-year holding period for homes bought from 4 Jul 2025. Agent fees include 9% GST.</p>
@@ -464,6 +524,37 @@
   const fmtDate = d => `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
+  // ---------- Sale & purchase timeline: templates ----------
+  // HDB and private steps start blank for Kenn to fill in. New launch uses the same rough BUC spacing as the
+  // payment timeline: foundation ~15 months after the OTP, framework +9, then ~6 a stage, TOP ~51, CSC TOP + 6.
+  const TL_TPL = {
+    hdb: { label: 'HDB', start: 'Issue OTP', key: 'Completion', segs: [
+      { to: 'Exercise OTP', unit: 'days' }, { to: 'Resale Application', unit: 'days' },
+      { to: 'HDB Acceptance', unit: 'days', basis: 'work' }, { to: 'Completion', unit: 'weeks' }] },
+    private: { label: 'Private', start: 'Issue OTP', key: 'Completion', segs: [
+      { to: 'Exercise OTP', unit: 'days' }, { to: 'Completion', unit: 'weeks' }] },
+    buc: { label: 'New launch', start: 'Booking (OTP)', key: 'TOP', segs: [
+      { to: 'S&P received', unit: 'days', v: '14' }, { to: 'S&P signed', unit: 'days', v: '21' },
+      { to: 'Foundation', unit: 'months', v: '14' }, { to: 'Framework', unit: 'months', v: '9' },
+      { to: 'Partition walls', unit: 'months', v: '6' }, { to: 'Roof & ceiling', unit: 'months', v: '6' },
+      { to: 'Doors, windows, M&E', unit: 'months', v: '6' }, { to: 'Car park & roads', unit: 'months', v: '6' },
+      { to: 'TOP', unit: 'months', v: '3' }, { to: 'CSC', unit: 'months', v: '6' }] },
+  };
+  const tlSegs = k => TL_TPL[k].segs.map(g => ({ v: g.v || '', unit: g.unit, basis: g.basis || 'cal' }));
+  const tlSide = type => ({ on: true, type, start: isoToday(), segs: { hdb: tlSegs('hdb'), private: tlSegs('private'), buc: tlSegs('buc') }, ext: { on: false, v: '', unit: 'months', basis: 'cal' } });
+  const tlDefaults = () => ({ on: false, sale: tlSide('hdb'), purchase: tlSide('private') });
+  const tlMerge = t => {
+    const d = tlDefaults();
+    if (!t) return d;
+    d.on = !!t.on;
+    for (const k of ['sale', 'purchase']) {
+      const x = t[k] || {};
+      d[k] = { ...d[k], ...x, segs: { ...d[k].segs, ...(x.segs || {}) }, ext: { ...d[k].ext, ...(x.ext || {}) } };
+      if (!TL_TPL[d[k].type] || (k === 'sale' && d[k].type === 'buc')) d[k].type = k === 'sale' ? 'hdb' : 'private';
+    }
+    return d;
+  };
+
   // ---------- State ----------
   const KEY = 'loan-calculator-v1';
   const blankBuyer = () => ({ age: '', cit: 'sc', fixed: '', variable: '', debts: '', other: false, propLoans: '', oa: '', cash: '', owned: '0', loans: '0' });
@@ -471,13 +562,16 @@
     n: 1, married: true, withKids: false, clientName: '',
     b: [blankBuyer(), blankBuyer()],
     buy: { type: 'private', mode: 'resale', price: '', val: '', lease: '', loan: 'bank', rate: '2.0', stress: '4.0', tenure: '', grants: '', keep: '', legal: null, hdbLegal: false, valFee: null, other: '', levyOn: false, levyType: '4', levySingle: false, levy: null, grantPHG: false, cashUse: '' },
+    tl: tlDefaults(),
     sale: { on: false, type: 'hdb', owner: 'both', price: '', loan: '', cpf: [{ p: '', i: '' }, { p: '', i: '' }], first: true, repaid: true, hdb2nd: true, contra: true, bought: '', legal: null, hdbLegal: false, penalty: '', share: '', coOwner: false, coP: '', coI: '' },
   });
   let state;
   try {
     const saved = JSON.parse(localStorage.getItem(KEY));
     const d = defaults();
-    state = saved ? { ...d, ...saved, buy: { ...d.buy, ...saved.buy }, sale: { ...d.sale, ...saved.sale }, b: [0, 1].map(i => ({ ...blankBuyer(), ...(saved.b || [])[i] })) } : d;
+    state = saved ? { ...d, ...saved, buy: { ...d.buy, ...saved.buy }, sale: { ...d.sale, ...saved.sale }, b: [0, 1].map(i => ({ ...blankBuyer(), ...(saved.b || [])[i] })), tl: tlMerge(saved.tl) } : d;
+    // Bring over anything typed into the old stand-alone timeline site (same origin).
+    if (!saved || !saved.tl) { const old = JSON.parse(localStorage.getItem('timeline-builder-v1') || 'null'); if (old && old.sale) state.tl = tlMerge({ ...old, on: true }); }
     state.b.forEach(b => { if (b.other === false && (num(b.owned) > 0 || num(b.loans) > 0 || num(b.propLoans) > 0)) b.other = true; });
     // older saves kept one combined CPF figure for the sale
     if (!Array.isArray(state.sale.cpf)) state.sale.cpf = [{ p: '', i: '' }, { p: '', i: '' }];
@@ -707,7 +801,7 @@
       ${seg('buy.type', [['hdb', 'HDB flat'], ['private', 'Private property'], ['ec', 'New EC']], 'Property type')}
       <span class="tb-rule">${rule}</span>`;
   }
-  function renderAll() { const c = compute(); renderTypebar(c); renderWho(c); renderLoan(c); renderSale(); renderBuy(c); renderResults(c); }
+  function renderAll() { const c = compute(); renderTypebar(c); renderWho(c); renderLoan(c); renderSale(); renderBuy(c); renderResults(c); TL.render(); }
 
   // ---------- Calculation ----------
   function compute() {
@@ -1313,8 +1407,9 @@
     ['sale', 'Sale of current home'],
     ['buy', 'Purchase breakdown'],
     ['timeline', 'Payment timeline'],
+    ['tline', 'Sale & purchase timeline'],
   ];
-  const sectionsAvailable = c => SECTIONS.filter(([k]) => (k === 'loan' && c.income) || (k === 'afford' && c.budget) || (k === 'sale' && c.sale) || (k === 'buy' && c.at) || (k === 'timeline' && c.fresh && c.at)).map(([k]) => k);
+  const sectionsAvailable = c => SECTIONS.filter(([k]) => (k === 'loan' && c.income) || (k === 'afford' && c.budget) || (k === 'sale' && c.sale) || (k === 'buy' && c.at) || (k === 'timeline' && c.fresh && c.at) || (k === 'tline' && state.tl.on && (state.tl.sale.on || state.tl.purchase.on))).map(([k]) => k);
   let exportSel = null; // { keys: [...], cover: bool } while an export is printing
 
   const NOTICE = `This report is prepared by ${AGENT.name} (${AGENT.full}), CEA Reg. No. ${AGENT.cea}, of ${AGENT.agency} (CEA Licence No. ${AGENT.licence}) for general information and reference only.
@@ -1480,12 +1575,21 @@
 
     const bodyFor = { loan, afford, sale, buy, timeline };
     const titleFor = Object.fromEntries(SECTIONS);
-    const pages = keys.map((k, i) => `<div class="rp">${head(titleFor[k])}${bodyFor[k]}${i === keys.length - 1 ? notes : ''}${foot(!withCover)}</div>`);
+    // Loan notes go on the last loan page, not on the timeline page.
+    const lastCalc = keys.filter(k => k !== 'tline').pop();
+    const tlOnly = !lastCalc;
+    const tlHead = `<header class="rp-head">
+        <div><h1>${TL.title()}</h1><p>${forWho ? `Prepared for ${esc(forWho)} · ` : ''}${fmtDate(t)}</p></div>
+        <div class="rp-tag"><b>${TL.tag()}</b>Estimated dates</div>
+      </header>`;
+    const pages = keys.map(k => k === 'tline'
+      ? `<div class="rp rp-land">${tlHead}${TL.reportBody()}${foot(!withCover)}</div>`
+      : `<div class="rp">${head(titleFor[k])}${bodyFor[k]}${k === lastCalc ? notes : ''}${foot(!withCover)}</div>`);
 
     const cover = !withCover ? '' : `<div class="rp rp-cover">
-      <div class="cv-top"><div class="cv-kicker">Home Loan &amp; Cash Plan</div>
-        <h1>${forWho ? `Prepared for<br><span>${esc(forWho)}</span>` : 'Your home loan<br><span>and cash plan</span>'}</h1>
-        <p class="cv-date">${fmtDate(t)} · ${typeLbl} · ${loanLbl}</p></div>
+      <div class="cv-top"><div class="cv-kicker">${tlOnly ? TL.title() : 'Home Loan &amp; Cash Plan'}</div>
+        <h1>${forWho ? `Prepared for<br><span>${esc(forWho)}</span>` : tlOnly ? 'Your sale and<br><span>purchase timeline</span>' : 'Your home loan<br><span>and cash plan</span>'}</h1>
+        <p class="cv-date">${fmtDate(t)} · ${tlOnly ? TL.tag() : `${typeLbl} · ${loanLbl}`}</p></div>
       <div class="cv-agent">
         <img src="img/kenn-kwang.webp" alt="${AGENT.name}">
         <div><div class="cv-by">A report by</div><div class="cv-name">${AGENT.name}</div>
@@ -1497,6 +1601,372 @@
     </div>`;
     document.getElementById('report').innerHTML = cover + pages.join('');
   }
+
+  // ---------- Section 5: sale & purchase timeline ----------
+  // Optional, at the bottom. Sale and purchase each switch on or off (pure seller, pure buyer). Every step takes a
+  // duration (days, weeks or months; days can be working days) or an end date, which back-fills the duration.
+  const TL = (() => {
+    const EXT = 'End of extension';
+    const DISC = 'The timeline and figures shown are for reference only. None of it represents the actual timeline of any transaction.';
+    const SIDES = ['sale', 'purchase'];
+    const COL = { sale: '#0d5c50', purchase: '#a47a2c', gap: '#b3402e', ext: '#4a3d78' };
+    const PRINT_W = 1400;
+    // Singapore public holidays, Sunday holidays already moved to Monday. 2027 to be checked against MOM's list.
+    const HOLIDAYS = new Set([
+      '2026-01-01', '2026-02-17', '2026-02-18', '2026-04-03', '2026-05-01', '2026-05-27',
+      '2026-06-01', '2026-08-10', '2026-11-09', '2026-12-25',
+      '2027-01-01', '2027-02-08', '2027-03-10', '2027-03-26', '2027-05-17', '2027-05-20',
+      '2027-08-09', '2027-10-28',
+    ]);
+    const iso = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+    const plusDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+    const plusMonths = (d, n) => {
+      const t = new Date(d.getFullYear(), d.getMonth() + n, 1);
+      return new Date(t.getFullYear(), t.getMonth(), Math.min(d.getDate(), new Date(t.getFullYear(), t.getMonth() + 1, 0).getDate()));
+    };
+    const isWorkday = d => d.getDay() !== 0 && d.getDay() !== 6 && !HOLIDAYS.has(iso(d));
+    const plusWorkdays = (d, n) => { let c = d, k = 0; while (k < n) { c = plusDays(c, 1); if (isWorkday(c)) k++; } return c; };
+    const dayDiff = (a, b) => Math.round((b - a) / 86400000);
+    const validDate = v => /^\d{4}-\d{2}-\d{2}$/.test(v || '');
+
+    function advance(d, g) {
+      const n = Number(g.v);
+      if (g.unit === 'months') return plusMonths(d, n);
+      if (g.unit === 'weeks') return plusDays(d, n * 7);
+      return g.basis === 'work' ? plusWorkdays(d, n) : plusDays(d, n);
+    }
+    function durLabel(g) {
+      const n = Number(g.v), one = n === 1;
+      const u = g.unit === 'days' ? (one ? 'day' : 'days') : g.unit === 'weeks' ? (one ? 'week' : 'weeks') : (one ? 'month' : 'months');
+      return `${n}${g.unit === 'days' && g.basis === 'work' ? ' working' : ''} ${u}`;
+    }
+    function spanLabel(days) {
+      days = Math.abs(days);
+      if (days === 0) return 'same day';
+      if (days >= 90) return `about ${Math.round(days / 30.44)} months (${days.toLocaleString('en-SG')} days)`;
+      const w = Math.floor(days / 7), r = days % 7;
+      const parts = [w ? `${w} week${w > 1 ? 's' : ''}` : '', r ? `${r} day${r > 1 ? 's' : ''}` : ''].filter(Boolean);
+      return parts.join(' ') + (w ? ` (${days} days)` : '');
+    }
+    const S = () => state.tl;
+    const tpl = k => TL_TPL[S()[k].type];
+    const sideName = k => k === 'sale' ? 'Sale' : 'Purchase';
+    const keyName = k => tpl(k).key === 'TOP' ? 'purchase TOP' : `${k} completion`;
+
+    // ----- Dates for one side -----
+    function sideDates(k) {
+      const s = S()[k], t = tpl(k);
+      let d = validDate(s.start) ? parseDate(s.start) : parseDate(isoToday());
+      const points = [{ label: t.start, date: d }], segments = [];
+      let pending = null, key = null;
+      for (let i = 0; i < t.segs.length; i++) {
+        const g = s.segs[s.type][i];
+        if (g.v === '') { pending = t.segs[i].to; break; }
+        const next = advance(d, g);
+        segments.push({ from: d, to: next, label: durLabel(g), dashed: false });
+        points.push({ label: t.segs[i].to, date: next, key: t.key === 'TOP' && t.segs[i].to === 'TOP' });
+        if (t.segs[i].to === t.key) key = next;
+        d = next;
+      }
+      const completion = pending ? null : d;
+      let extEnd = null;
+      if (completion && s.ext.on && s.ext.v !== '') {
+        extEnd = advance(completion, s.ext);
+        segments.push({ from: completion, to: extEnd, label: durLabel(s.ext) + ' extension', dashed: true });
+        points.push({ label: EXT, date: extEnd, hollow: true });
+      } else if (completion && s.ext.on) pending = EXT;
+      return { points, segments, pending, completion, key, extEnd, last: d };
+    }
+    const onSides = () => S().on ? SIDES.filter(k => S()[k].on) : [];
+
+    function gaps(D) {
+      const out = [];
+      if (!D.sale || !D.purchase || !D.purchase.key) return out;
+      const pk = keyName('purchase');
+      if (D.sale.completion) {
+        const g = dayDiff(D.sale.completion, D.purchase.key);
+        out.push({ cls: 'c', k: `Sale completion vs ${pk}`, days: g, from: D.sale.completion,
+          v: g === 0 ? `Sale completes on the day of ${pk}` : `Sale completes ${spanLabel(g)} ${g > 0 ? 'before' : 'after'} ${pk}` });
+      }
+      if (D.sale.extEnd) {
+        const e = dayDiff(D.purchase.key, D.sale.extEnd);
+        out.push({ cls: 'e', k: `Extension vs ${pk}`, days: e, from: D.sale.extEnd,
+          v: e === 0 ? `Extension ends on the day of ${pk}` : `Extension ends ${spanLabel(e)} ${e > 0 ? 'after' : 'before'} ${pk}` });
+      }
+      return out;
+    }
+
+    // ----- Chart -----
+    const NS = 'http://www.w3.org/2000/svg';
+    const FONT = getComputedStyle(document.body).fontFamily;
+    const ctx = document.createElement('canvas').getContext('2d');
+    const textW = (str, size, weight = 400) => { ctx.font = `${weight} ${size}px ${FONT}`; return ctx.measureText(str).width; };
+    // One line of labels: each sits as close to its point as it can; crowded neighbours are pushed apart as a group.
+    function spread(items, gap, lo, hi) {
+      items.sort((a, b) => a.d - b.d);
+      const clusters = [];
+      const place = c => {
+        let o = 0;
+        c.offs = c.items.map((it, j) => (o += (j ? c.items[j - 1].w / 2 + gap : 0) + it.w / 2));
+        c.width = o + c.items[c.items.length - 1].w / 2;
+        c.left = c.items.reduce((a, it, j) => a + it.d - c.offs[j], 0) / c.items.length;
+        c.left = Math.max(lo, Math.min(c.left, hi - c.width));
+      };
+      for (const it of items) {
+        let c = { items: [it] };
+        place(c);
+        while (clusters.length) {
+          const prev = clusters[clusters.length - 1];
+          if (prev.left + prev.width + gap <= c.left) break;
+          clusters.pop();
+          c = { items: [...prev.items, ...c.items] };
+          place(c);
+        }
+        clusters.push(c);
+      }
+      for (const c of clusters) c.items.forEach((it, j) => { it.x = c.left + c.offs[j]; });
+    }
+    // Too many labels for one line (e.g. a new launch's stages): alternate them over extra lines.
+    function rows(items, gap, lo, hi) {
+      if (!items.length) return 1;
+      items.sort((a, b) => a.d - b.d);
+      let k = 1;
+      const fits = k => [...Array(k).keys()].every(r => items.filter((_, i) => i % k === r).reduce((a, it) => a + it.w + gap, -gap) <= hi - lo);
+      while (k < 4 && !fits(k)) k++;
+      for (let r = 0; r < k; r++) { const row = items.filter((_, i) => i % k === r); spread(row, gap, lo, hi); row.forEach(it => { it.row = r; }); }
+      return k;
+    }
+
+    function draw(svg, W) {
+      svg.innerHTML = '';
+      svg.setAttribute('font-family', FONT);
+      const el = (tag, a, text) => { const n = document.createElementNS(NS, tag); for (const x in a) n.setAttribute(x, a[x]); if (text != null) n.textContent = text; svg.appendChild(n); return n; };
+      const halo = { stroke: '#fff', 'stroke-width': 4, 'stroke-linejoin': 'round', 'paint-order': 'stroke' };
+      const sides = onSides();
+      if (!sides.length) {
+        svg.setAttribute('width', W); svg.setAttribute('height', 60); svg.setAttribute('viewBox', `0 0 ${W} 60`);
+        el('text', { x: 16, y: 36, 'font-size': 14, fill: '#98a09c' }, 'Switch on the sale or the purchase below.');
+        return;
+      }
+      const D = Object.fromEntries(sides.map(k => [k, sideDates(k)]));
+      const L = 150, R = 70, lo = L - 40, hi = W - 6;
+      const all = sides.flatMap(k => D[k].points.map(p => p.date));
+      let min = new Date(Math.min(...all)), max = new Date(Math.max(...all));
+      if (dayDiff(min, max) < 30) max = plusDays(min, 30);
+      const x = d => L + ((d - min) / (max - min)) * (W - L - R);
+
+      // Lay the labels out first: the number of label lines decides the height.
+      const lay = {};
+      for (const k of sides) {
+        const ms = D[k].points.map(p => ({ d: x(p.date), px: x(p.date), p, w: Math.max(textW(p.label, 13, 600), textW(fmtDate(p.date), 12)) }));
+        const durs = D[k].segments.map(g => ({ d: (x(g.from) + x(g.to)) / 2, w: textW(g.label, 13), g }));
+        lay[k] = { ms, mr: rows(ms, 14, lo, hi), durs, dr: rows(durs, 12, lo, hi) };
+      }
+      const G = gaps(D);
+      const Y = {};
+      let cur = 14, yGap = {};
+      if (D.sale) { Y.sale = cur + 58 + (lay.sale.mr - 1) * 36; cur = Y.sale + 28 + (lay.sale.dr - 1) * 16 + 10; }
+      if (G.length) { for (const g of G) { yGap[g.cls] = cur + 26; cur += 38; } cur += 4; }
+      else if (D.sale && D.purchase) cur += 18;
+      if (D.purchase) { Y.purchase = cur + 32 + (lay.purchase.dr - 1) * 16; cur = Y.purchase + 34 + (lay.purchase.mr - 1) * 36 + 22; }
+      const H = cur + 30;
+      svg.setAttribute('width', W); svg.setAttribute('height', H); svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+      // month grid
+      const months = dayDiff(min, max) / 30.44;
+      const step = months > 48 ? 6 : months > 24 ? 3 : months > 9 ? 2 : 1;
+      for (let m = new Date(min.getFullYear(), min.getMonth() + 1, 1); m <= max; m = new Date(m.getFullYear(), m.getMonth() + step, 1)) {
+        const mx = x(m);
+        el('line', { x1: mx, x2: mx, y1: 6, y2: H - 30, stroke: '#efece4', 'stroke-width': 1 });
+        el('text', { x: mx, y: H - 10, 'text-anchor': 'middle', 'font-size': 12, fill: '#98a09c' }, `${MONTHS[m.getMonth()]} ${String(m.getFullYear()).slice(2)}`);
+      }
+
+      // gaps: from the sale's completion (or extension end) down to the purchase's completion or TOP
+      for (const g of G) {
+        const col = g.cls === 'c' ? COL.gap : COL.ext, sx = x(g.from), px = x(D.purchase.key), yy = yGap[g.cls];
+        el('line', { x1: sx, x2: sx, y1: Y.sale + 8, y2: Y.purchase - 8, stroke: col, 'stroke-width': 1.5, 'stroke-dasharray': '5 5' });
+        if (!g.days) continue;
+        el('line', { x1: sx, x2: px, y1: yy, y2: yy, stroke: col, 'stroke-width': 1.5 });
+        for (const ex of [sx, px]) el('line', { x1: ex, x2: ex, y1: yy - 6, y2: yy + 6, stroke: col, 'stroke-width': 1.5 });
+        const lbl = (g.cls === 'e' ? 'Extension: ' : '') + spanLabel(g.days);
+        const w = textW(lbl, 13, 600) + 12;
+        const cx = Math.min(Math.max((sx + px) / 2, w / 2 + 4), W - w / 2 - 4);
+        el('rect', { x: cx - w / 2, y: yy - 21, width: w, height: 18, rx: 4, fill: '#fff' });
+        el('text', { x: cx, y: yy - 8, 'text-anchor': 'middle', 'font-size': 13, 'font-weight': 600, fill: col }, lbl);
+      }
+      for (const k of sides) {
+        const y = Y[k], above = k === 'sale', dir = above ? -1 : 1, col = COL[k], d = D[k], ly = lay[k];
+        el('text', { x: 14, y: y + 5, 'font-size': 13, 'font-weight': 800, 'letter-spacing': '0.1em', fill: col }, k.toUpperCase());
+        for (const g of d.segments) el('line', { x1: x(g.from), x2: x(g.to), y1: y, y2: y, stroke: col, 'stroke-width': 4, 'stroke-linecap': 'round', 'stroke-dasharray': g.dashed ? '2 9' : 'none' });
+        if (d.pending) {
+          const sx = x(d.last);
+          el('line', { x1: sx, x2: sx + 46, y1: y, y2: y, stroke: '#c5cbc8', 'stroke-width': 3, 'stroke-dasharray': '4 5' });
+          el('text', { x: sx + 52, y: y + 4, 'font-size': 12, fill: '#98a09c', ...halo }, `→ ${d.pending}?`);
+        }
+        for (const m of ly.ms) {
+          const nameY = above ? y - 46 - m.row * 36 : y + 34 + m.row * 36;
+          el('polyline', { points: `${m.px},${y} ${m.px},${y + dir * 10} ${m.x},${above ? nameY + 20 : nameY - 13}`, fill: 'none', stroke: col, 'stroke-width': 1, opacity: 0.45 });
+        }
+        for (const m of ly.ms) {
+          const nameY = above ? y - 46 - m.row * 36 : y + 34 + m.row * 36;
+          el('circle', { cx: m.px, cy: y, r: m.p.key ? 7 : 6, fill: m.p.hollow ? '#fff' : col, stroke: m.p.key ? '#15201c' : col, 'stroke-width': m.p.key ? 2 : 2.5 });
+          el('text', { x: m.x, y: nameY, 'text-anchor': 'middle', 'font-size': 13, 'font-weight': 600, fill: '#15201c', ...halo }, m.p.label);
+          el('text', { x: m.x, y: nameY + 16, 'text-anchor': 'middle', 'font-size': 12, fill: '#66706c', ...halo }, fmtDate(m.p.date));
+        }
+        for (const t of ly.durs) {
+          el('text', { x: t.x, y: above ? y + 28 + t.row * 16 : y - 20 - t.row * 16, 'text-anchor': 'middle', 'font-size': 13, fill: col, 'font-style': t.g.dashed ? 'italic' : 'normal', ...halo }, t.g.label);
+        }
+      }
+
+    }
+
+    // ----- Screen panel -----
+    function segRow(k, g, attrs) {
+      return `<div class="tl-seg-in" data-side="${k}" ${attrs}>
+        <input type="number" inputmode="numeric" min="0" step="1" placeholder="—" value="${esc(g.v)}" data-tl-k="v" aria-label="Duration">
+        <select data-tl-k="unit" aria-label="Unit">${['days', 'weeks', 'months'].map(u => `<option value="${u}"${g.unit === u ? ' selected' : ''}>${u[0].toUpperCase() + u.slice(1)}</option>`).join('')}</select>
+        ${g.unit === 'days' ? `<select data-tl-k="basis" aria-label="Calendar or working days"><option value="cal"${g.basis === 'cal' ? ' selected' : ''}>Calendar days</option><option value="work"${g.basis === 'work' ? ' selected' : ''}>Working days</option></select>` : ''}
+        <input type="date" data-tl-k="date" aria-label="End date">
+      </div>`;
+    }
+    function sideHtml(k) {
+      const s = S()[k], t = tpl(k);
+      const head = `<div class="tl-side-head"><h3>${sideName(k)}</h3>
+        <label class="switch"><input type="checkbox" data-toggle="tl.${k}.on" ${s.on ? 'checked' : ''} aria-label="Include the ${k}"><span></span></label></div>`;
+      if (!s.on) return `<div class="tl-side ${k} off">${head}<p class="fine">${k === 'sale' ? 'Not selling. Switch on to add the sale.' : 'Not buying. Switch on to add the purchase.'}</p></div>`;
+      const types = k === 'sale' ? [['hdb', 'HDB'], ['private', 'Private']] : [['hdb', 'HDB'], ['private', 'Private resale'], ['buc', 'New launch']];
+      let prev = t.start;
+      const segs = t.segs.map((g, i) => {
+        const h = `<div class="tl-seg"><div class="tl-seg-name">${esc(prev)}<i>→</i>${esc(g.to)}</div>${segRow(k, s.segs[s.type][i], `data-i="${i}"`)}</div>`;
+        prev = g.to;
+        return h;
+      }).join('');
+      return `<div class="tl-side ${k}">${head}
+        ${wide(seg(`tl.${k}.type`, types, `Type of ${k}`))}
+        <label class="f"><span>${esc(t.start)} date</span><input type="date" data-tl-start="${k}" value="${esc(s.start)}"></label>
+        ${s.type === 'buc' ? '<p class="fine" style="margin:-4px 0 10px">Stages filled in with rough spacing. Change any of them, or type the TOP date the developer gives.</p>' : ''}
+        ${segs}
+        ${toggle(`tl.${k}.ext.on`, 'Extension after completion', k === 'sale' ? 'e.g. extension of stay after the sale completes' : '')}
+        ${s.ext.on ? `<div class="tl-seg ext"><div class="tl-seg-name">${esc(t.segs[t.segs.length - 1].to)}<i>→</i>${EXT}</div>${segRow(k, s.ext, 'data-ext')}</div>` : ''}
+      </div>`;
+    }
+    function render() {
+      const el = document.getElementById('panel-tl'), T = S();
+      el.classList.toggle('off', !T.on);
+      const head = `<div class="panel-head">${title(5, 'Sale &amp; purchase timeline')}<div class="tl-head-r">
+        ${T.on && onSides().length ? '<button type="button" class="ghost tl-export" data-export="tline">Export</button>' : ''}
+        <label class="switch"><input type="checkbox" data-toggle="tl.on" ${T.on ? 'checked' : ''} aria-label="Show the timeline"><span></span></label></div></div>`;
+      if (!T.on) { el.innerHTML = head + '<p class="off-hint">See how long the sale and the purchase each take, side by side. Switch on.</p>'; return; }
+      el.innerHTML = `${head}
+        <div class="tl-chart"><div class="tl-scroll"><svg id="tl-chart" role="img" aria-label="Sale and purchase timeline"></svg></div><div class="tl-sum" id="tl-sum"></div></div>
+        <div class="tl-sides">${sideHtml('sale')}${sideHtml('purchase')}</div>
+        <p class="disclaimer"><b>Disclaimer:</b> ${DISC}</p>
+        <p class="note">Leave a box blank and that timeline stops at that step. Working days skip weekends and Singapore public holidays.</p>`;
+      paint();
+    }
+    function paint() {
+      syncDates();
+      const svg = document.getElementById('tl-chart');
+      if (!svg) return;
+      draw(svg, Math.max(760, svg.parentElement.clientWidth));
+      const sides = onSides(), D = Object.fromEntries(sides.map(k => [k, sideDates(k)]));
+      const out = [];
+      for (const k of sides) {
+        if (D[k].key) out.push(`${sideName(k)} ${tpl(k).key === 'TOP' ? 'TOP' : 'completes'} <b>${fmtDate(D[k].key)}</b>`);
+        if (D[k].extEnd) out.push(`${sideName(k)} extension ends <b>${fmtDate(D[k].extEnd)}</b>`);
+      }
+      gaps(D).forEach(g => out.push(`<b>${g.v}</b>`));
+      document.getElementById('tl-sum').innerHTML = (out.length ? out : ['Fill in the steps below to build the timeline.']).map(x => `<span>${x}</span>`).join('');
+    }
+    function refresh() { save(); paint(); buildReport(compute_()); }
+    const compute_ = () => compute();
+
+    // Each step's end date sits beside its duration; disabled until the step's start is known.
+    function syncDates() {
+      for (const k of SIDES) {
+        const s = S()[k];
+        if (!s.on) continue;
+        const d = sideDates(k);
+        document.querySelectorAll(`#panel-tl .tl-seg-in[data-side="${k}"]`).forEach(row => {
+          const inp = row.querySelector('[data-tl-k=date]');
+          if (inp === document.activeElement) return;
+          let from, end;
+          if ('ext' in row.dataset) { from = d.completion; end = d.extEnd; }
+          else { const i = Number(row.dataset.i); from = d.points[i] && d.points[i].date; end = s.segs[s.type][i].v !== '' && d.points[i + 1] ? d.points[i + 1].date : null; }
+          inp.disabled = !from;
+          inp.min = from ? iso(from) : '';
+          inp.value = end ? iso(end) : '';
+        });
+      }
+    }
+    // Work a step's duration back out from the end date picked for it.
+    function setByDate(row, g, value) {
+      const k = row.dataset.side, d = sideDates(k);
+      const from = 'ext' in row.dataset ? d.completion : (d.points[Number(row.dataset.i)] || {}).date;
+      if (!from || !validDate(value)) return;
+      const to = parseDate(value), diff = dayDiff(from, to);
+      if (diff < 0) return syncDates();
+      const before = g.unit;
+      if (g.unit === 'months') {
+        const n = (to.getFullYear() - from.getFullYear()) * 12 + to.getMonth() - from.getMonth();
+        if (iso(plusMonths(from, n)) === value) g.v = String(n); else { g.unit = 'days'; g.basis = 'cal'; g.v = String(diff); }
+      } else if (g.unit === 'weeks') {
+        if (diff % 7 === 0) g.v = String(diff / 7); else { g.unit = 'days'; g.basis = 'cal'; g.v = String(diff); }
+      } else if (g.basis === 'work') {
+        let n = 0; for (let c = plusDays(from, 1); c <= to; c = plusDays(c, 1)) if (isWorkday(c)) n++;
+        g.v = String(n);
+      } else g.v = String(diff);
+      if (g.unit !== before) { save(); render(); buildReport(compute_()); }
+      else { row.querySelector('[data-tl-k=v]').value = g.v; refresh(); }
+    }
+
+    document.addEventListener('input', e => {
+      const t = e.target;
+      if (t.dataset.tlStart) { state.tl[t.dataset.tlStart].start = validDate(t.value) ? t.value : isoToday(); return refresh(); }
+      const row = t.closest('.tl-seg-in'), k = t.dataset.tlK;
+      if (!row || !k) return;
+      const s = state.tl[row.dataset.side];
+      const g = 'ext' in row.dataset ? s.ext : s.segs[s.type][Number(row.dataset.i)];
+      if (k === 'date') return setByDate(row, g, t.value);
+      if (k === 'v') g.v = t.value === '' ? '' : String(Math.max(0, Math.round(Number(t.value))));
+      else g[k] = t.value;
+      if (k === 'unit') { if (g.unit !== 'days') g.basis = 'cal'; save(); render(); return buildReport(compute_()); }
+      refresh();
+    });
+    document.addEventListener('focusout', e => { if (e.target.dataset && e.target.dataset.tlK === 'date') setTimeout(syncDates); });
+    let rz;
+    window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (document.getElementById('tl-chart')) paint(); }, 120); });
+
+    // ----- Report page -----
+    function card(k, d) {
+      const s = S()[k], t = tpl(k);
+      const names = [t.start, ...t.segs.map(g => g.to)];
+      if (s.ext.on) names.push(EXT);
+      const rows_ = names.map((n, i) => {
+        const p = d.points[i], g = i ? d.segments[i - 1] : null;
+        return `<tr class="${p ? '' : 'pending'}${n === EXT ? ' ext' : ''}${n === t.key && t.key === 'TOP' ? ' key' : ''}"><td>${esc(n)}</td><td>${p ? fmtDate(p.date) : 'Not set'}</td><td>${g ? g.label : i ? '—' : 'Start'}</td></tr>`;
+      }).join('');
+      const total = d.key ? `${esc(t.start)} to ${t.key}: <b>${spanLabel(dayDiff(d.points[0].date, d.key))}</b>` : 'Fill in every step to see the total.';
+      return `<div class="tlr-card ${k}"><div class="tlr-head"><span>${sideName(k)}</span><em>${t.label}</em></div>
+        <table><thead><tr><th>Milestone</th><th>Date</th><th>Step</th></tr></thead><tbody>${rows_}</tbody></table>
+        <div class="tlr-total">${total}</div></div>`;
+    }
+    function reportBody() {
+      const sides = onSides(), D = Object.fromEntries(sides.map(k => [k, sideDates(k)]));
+      const svg = document.createElementNS(NS, 'svg');
+      draw(svg, PRINT_W);
+      svg.setAttribute('class', 'tlr-svg');
+      const G = gaps(D);
+      return `<div class="tlr-chart">${svg.outerHTML}</div>
+        ${G.length ? `<div class="tlr-gaps">${G.map(g => `<div class="tlr-gap ${g.cls}"><small>${g.k}</small><b>${g.v}</b></div>`).join('')}</div>` : ''}
+        <div class="tlr-grid n${sides.length}">${sides.map(k => card(k, D[k])).join('')}</div>
+        <p class="tlr-disc"><b>Disclaimer:</b> ${DISC} Working days exclude weekends and Singapore public holidays.</p>`;
+    }
+    const tag = () => onSides().map(k => `${sideName(k)}: ${tpl(k).label}`).join(' · ');
+    const tlTitle = () => { const o = onSides(); return o.length === 1 ? `${sideName(o[0])} timeline` : 'Sale &amp; purchase timeline'; };
+
+    return { render, reportBody, tag, title: tlTitle };
+  })();
 
   // ---------- Export ----------
   function exportPDF(keys, cover = true) {
@@ -1514,7 +1984,7 @@
       <label class="f full"><span>Prepared for (optional)</span><input type="text" id="dlg-client" value="${esc(state.clientName || '')}" placeholder="Client's name"></label>
       <p class="block-title" style="margin:16px 0 6px">Sections</p>
       <div class="dlg-list">
-        ${SECTIONS.map(([k, label]) => `<label class="dlg-row${avail.includes(k) ? '' : ' off'}"><input type="checkbox" data-sec="${k}" ${avail.includes(k) ? 'checked' : 'disabled'}><span>${label}</span>${avail.includes(k) ? '' : `<em>${k === 'sale' ? 'Switch on the sale first' : k === 'buy' ? 'Enter a purchase price first' : 'Enter income first'}</em>`}</label>`).join('')}
+        ${SECTIONS.map(([k, label]) => `<label class="dlg-row${avail.includes(k) ? '' : ' off'}"><input type="checkbox" data-sec="${k}" ${avail.includes(k) ? 'checked' : 'disabled'}><span>${label}</span>${avail.includes(k) ? '' : `<em>${k === 'sale' ? 'Switch on the sale first' : k === 'buy' || k === 'timeline' ? 'Enter a purchase price first' : k === 'tline' ? 'Switch on the timeline first' : 'Enter income first'}</em>`}</label>`).join('')}
         <label class="dlg-row"><input type="checkbox" id="dlg-cover" checked><span>Cover page with your photo</span></label>
       </div>
       <div class="dlg-actions"><button class="ghost" type="button" id="dlg-cancel">Cancel</button><button class="ghost primary" type="button" id="dlg-go">Export PDF</button></div>
@@ -1602,6 +2072,7 @@
     setPath(p, v);
     if (p === 'buy.type' || p === 'buy.loan' || p === 'buy.mode') { state.buy.tenure = ''; state.buy.legal = null; state.buy.valFee = null; }
     if (p === 'sale.type') state.sale.legal = null;
+    if (p === 'tl.purchase.type' && v === 'buc' && /^\d{4}-\d{2}-\d{2}$/.test(state.buy.otp || '')) state.tl.purchase.start = state.buy.otp;
     save(); renderAll();
   });
   let armed = false;
