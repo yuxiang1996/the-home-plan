@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Analyser</title>
+<script>try { if (localStorage.getItem('analyser-tips') === '1') document.documentElement.classList.add('tips'); } catch (e) {}</script>
 <script>try { const t = localStorage.getItem('analyser-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -305,6 +306,15 @@
   .tl-side .switch-row { border-top: 1px dashed var(--line); }
   #report { display: none; }
   .theme-btn { min-width: 44px; padding-inline: 12px; font-size: 16px; line-height: 1; }
+  .tips-btn { display: inline-flex; align-items: center; gap: 6px; }
+  .actions button { white-space: nowrap; }
+  @media (max-width: 480px) { .actions { gap: 6px; width: 100%; } .actions button.ghost { padding: 8px 11px; font-size: 13.5px; } .actions #print { margin-left: auto; } }
+  .tips-btn i { font-style: normal; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid currentColor; display: inline-grid; place-items: center; font-size: 11px; font-weight: 800; }
+  .tips-btn[aria-pressed="true"] { background: var(--who-soft); border-color: var(--who); color: var(--who); font-weight: 700; }
+  /* Explanations stay out of the way until "Tips" is switched on */
+  html:not(.tips) .f > small, html:not(.tips) .switch-row small, html:not(.tips) .fine, html:not(.tips) .tb-rule,
+  html:not(.tips) .rows td small, html:not(.tips) .hero .why, html:not(.tips) .note, html:not(.tips) .tl-a small,
+  html:not(.tips) .tl-e small:not(:first-of-type), html:not(.tips) .ways > .fine, html:not(.tips) .tl-stats small { display: none; }
 
   /* Dark theme: screen only, so the printed report always stays light */
   @media screen {
@@ -430,7 +440,7 @@
     .rp-s h2::before { content: ""; width: 4px; height: 14px; border-radius: 2px; background: var(--buy); }
     .rp-s h2 i { font-style: normal; width: 19px; height: 19px; border-radius: 50%; background: var(--ink); color: #fff; display: inline-grid; place-items: center; font-size: 10px; }
     .rp-t { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; table-layout: fixed; }
-    .rp-t col.l { width: 46%; } .rp-t col.n { width: 34%; } .rp-t col.a { width: 20%; }
+    .rp-t col.l { width: 70%; } .rp-t col.a { width: 30%; }
     .rp-t td { padding: 4.5px 0; border-bottom: 1px solid #eceeec; font-size: 11px; vertical-align: baseline; }
     .rp-t td.n { color: var(--muted); font-size: 9.5px; padding-left: 8px; }
     .rp-t td.a { text-align: right; white-space: nowrap; font-weight: 600; }
@@ -520,6 +530,7 @@
     </div>
     <div class="actions">
       <button class="ghost theme-btn" id="theme" type="button" aria-label="Switch to dark theme"></button>
+      <button class="ghost tips-btn" id="tips" type="button" aria-pressed="false" title="Show or hide the explanations"><i>i</i>Tips</button>
       <button class="ghost primary" id="print">Export PDF</button>
       <button class="ghost" id="reset">Clear all</button>
     </div>
@@ -1517,9 +1528,10 @@
     const at = c.at, b = c.budget, s = c.sale;
     const typeLbl = c.hdb ? 'HDB resale' : c.ec ? 'New EC' : c.fresh ? 'New launch' : 'Private resale';
     const loanLbl = c.hdbLoan ? `HDB loan ${c.rate}% fixed` : `Bank loan ${c.rate}%`;
-    const L = (label, amt, cls = '', note = '') => `<tr class="${cls}"><td class="l">${label}</td><td class="n">${note}</td><td class="a">${amt}</td></tr>`;
-    const gap = '<tr class="gap"><td colspan="3"></td></tr>';
-    const table = rows => `<table class="rp-t"><colgroup><col class="l"><col class="n"><col class="a"></colgroup>${rows}</table>`;
+    // Report shows results only: the note argument is kept for reference in the code but not printed.
+    const L = (label, amt, cls = '') => `<tr class="${cls}"><td class="l">${label}</td><td class="a">${amt}</td></tr>`;
+    const gap = '<tr class="gap"><td colspan="2"></td></tr>';
+    const table = rows => `<table class="rp-t"><colgroup><col class="l"><col class="a"></colgroup>${rows}</table>`;
     const sec = (title, rows) => `<section class="rp-s"><h2>${title}</h2>${table(rows)}</section>`;
     const neg = x => money(-x);
     const avail = sectionsAvailable(c);
@@ -1528,25 +1540,13 @@
     const t = new Date();
     const forWho = (state.clientName || '').trim();
 
-    // --- Loan from income: the full working
-    const loan = !c.income ? '' : sec('How the loan is worked out', `
-      ${c.B.map((x, i) => {
-        const who = state.n > 1 ? `Buyer ${i + 1} ` : '';
-        return L(`${who}fixed income`, money(num(x.fixed)), '', '/month') + (num(x.variable) ? L(`${who}variable income`, money(0.7 * num(x.variable)), '', `${money(num(x.variable))} × 70% (30% haircut)`) : '');
-      }).join('')}
-      ${L('Income counted', money(c.income), 'tot', '/month')}
-      ${c.hdbLoan || c.useMSR ? L('× MSR 30%', money(0.3 * c.income), '', 'cap on home loan instalments') : ''}
-      ${(c.hdbLoan || c.useMSR) && c.otherProp ? L('Less other home loans', neg(c.otherProp)) : ''}
-      ${!c.hdbLoan ? L('× TDSR 55%', money(0.55 * c.income), '', 'cap on all debts') : ''}
-      ${!c.hdbLoan && (c.otherDebt + c.otherProp) ? L('Less other debts and home loans', neg(c.otherDebt + c.otherProp)) : ''}
-      ${L('Max monthly instalment', money(Math.max(0, c.allowance)), 'tot', !c.hdbLoan && c.useMSR ? 'lower of MSR and TDSR' : (c.hdbLoan || c.useMSR) ? 'MSR' : 'TDSR (private property)')}
-      ${L('Loan this repays', money(c.incomeLoanR), 'tot big', `at ${c.stress}% stress test over ${yrs(c.tenure)}`)}
-      ${L('Loan-to-value limit', pct(c.ltv, 0), '', c.hdbLoan ? 'HDB loan' : c.loansOut ? 'with an outstanding home loan' : c.lowTier ? 'lower tier — tenure or age' : 'first housing loan')}
-      ${c.ltv > 0 ? L('Max purchase price this loan supports', money(Math.floor(c.incomeLoanR / c.ltv)), 'tot', `loan is ${pct(c.ltv, 0)} of the price · client funds the ${pct(1 - c.ltv, 0)} downpayment`) : ''}
-      ${gap}
-      ${L('Monthly instalment', money(pmt(c.rate, c.tenure, c.incomeLoanR)), 'big', `${money(c.incomeLoanR)} at ${c.rate}%${c.hdbLoan ? ' fixed' : ''} over ${yrs(c.tenure)}`)}
-      ${L('At the stress-test rate', money(pmt(c.stress, c.tenure, c.incomeLoanR)), 'sub', `${c.stress}% — what the ${c.hdbLoan || c.incomeRule === 'MSR' ? 'MSR' : 'TDSR'} test uses`)}
-      ${L('Loan tenure', yrs(c.tenure), 'sub', c.agesKnown ? `${state.n > 1 ? 'income-weighted' : 'buyer'} age ${c.iwaa.toFixed(1)}` : '')}`);
+    // --- Loan from income: the results
+    const loan = !c.income ? '' : sec('Loan from income', `
+      ${L('Monthly income counted', money(c.income))}
+      ${L('Max monthly instalment allowed', money(Math.max(0, c.allowance)))}
+      ${L('Loan amount', money(c.incomeLoanR), 'tot big')}
+      ${L(`Monthly instalment (${c.rate}%, ${yrs(c.tenure)})`, money(pmt(c.rate, c.tenure, c.incomeLoanR)))}
+      ${c.ltv > 0 ? L(`Max price this loan supports (${pct(c.ltv, 0)} loan)`, money(Math.floor(c.incomeLoanR / c.ltv)), 'tot') : ''}`);
 
     // --- Max affordability: the loan they can get, provided they put up the downpayment and fees for this price
     let afford = '';
@@ -1556,8 +1556,7 @@
       const lend = c.hdbLoan ? 'An HDB loan' : 'A bank loan';
       const toPrepare = down + f.fees;
       afford = `<div class="rp-answer"><div><div class="k">Max purchase price</div><div class="v">${money(P)}</div></div>
-        <p>${lend} of <b>${money(f.loan)}</b> (${pct(f.loan / Math.max(1, P), 0)} of the price), provided the client puts up the
-        <b>${money(down)}</b> downpayment and <b>${money(f.fees)}</b> of stamp duty and fees — <b>${money(toPrepare)}</b> in total${f.minCash > 0 ? `, of which at least <b>${money(f.minCash)}</b> must be cash` : ''}.</p></div>
+        <p>Loan <b>${money(f.loan)}</b> · Downpayment <b>${money(down)}</b> · Stamp duty and fees <b>${money(f.fees)}</b><br>Total to prepare <b>${money(toPrepare)}</b>${f.minCash > 0 ? ` (at least <b>${money(f.minCash)}</b> in cash)` : ''}</p></div>
         ${sec('What it takes', `
           ${L('Purchase price', money(P))}
           ${L(`Less ${c.hdbLoan ? 'HDB' : 'bank'} loan`, neg(f.loan), '', `${pct(f.loan / Math.max(1, P), 0)} of the price · ${c.incomeRule === 'MSR' ? 'MSR 30%' : 'TDSR 55%'} at ${c.stress}% · ${yrs(c.tenure)}`)}
@@ -1621,7 +1620,7 @@
           ${L('Less cash available', neg(Math.min(c.cashAvail, at.cashNeeded)), '', cashSrc(c))}
           ${L(need ? 'Cash top-up needed' : 'Cash left over', money(Math.abs(c.shortfall)), `tot big ${need ? 'bad' : 'good'}`)}
           ${L('Cash due before completion', money(c.upfront), 'sub', upfrontNote(c))}`)
-        + (ways.length ? `<section class="rp-s"><h2>Ways to raise the loan</h2><ul class="rp-notes">${ways.map(w => `<li>${w}</li>`).join('')}</ul><p class="rp-fine">These are general pointers only, not mortgage advice. Whether any of them applies, and by how much, depends on the bank's own assessment. The client should check with a banker or mortgage broker before relying on them.</p></section>` : '');
+        ;
     }
 
     // --- New launch payment timeline
@@ -1635,7 +1634,7 @@
         return `<tr class="${x.ev.startsWith('TOP') ? 'top' : ''}${x.amt ? ' pay' : ''}">
           <td class="no"><i>${i + 1}</i></td>
           <td class="st">${x.ev}${x.note ? `<small>${x.note}</small>` : ''}</td>
-          <td class="wh">${x.d ? `<b>${x.dateLbl}</b><small>${x.when}</small>` : x.when}</td>
+          <td class="wh">${x.d ? `<b>${x.dateLbl}</b>` : x.when}</td>
           <td class="sh">${x.amt && x.ev !== 'Stamp duty' ? share : x.amt ? '—' : ''}</td>
           <td class="pb">${x.amt ? payer : ''}</td>
           <td class="am">${x.amt ? money(x.amt) : ''}</td>
@@ -1656,8 +1655,9 @@
         <ul class="rp-notes"><li>Construction timing is a rough estimate; actual progress depends on the developer. Legal fees are paid to the lawyer in stages.</li></ul>`;
     }
 
-    const warn = c.flags.filter(f => f[0] === 'warn'), rest = c.flags.filter(f => f[0] !== 'warn').slice(0, 3);
-    const notes = [...warn, ...rest].length ? `<section class="rp-s"><h2>Notes</h2><ul class="rp-notes">${[...warn, ...rest].map(([k, x]) => `<li class="${k}">${x}</li>`).join('')}</ul></section>` : '';
+    // Only the warnings make it into the report; the explanatory notes stay on screen.
+    const warn = c.flags.filter(f => f[0] === 'warn');
+    const notes = warn.length ? `<section class="rp-s"><h2>Please note</h2><ul class="rp-notes">${warn.map(([k, x]) => `<li class="${k}">${x}</li>`).join('')}</ul></section>` : '';
 
     const who = c.B.map((x, i) => `${state.n > 1 ? `Buyer ${i + 1}: ` : ''}${CIT[x.cit]}${has(x.age) ? `, ${x.age}` : ''}, ${money(num(x.fixed) + num(x.variable))}/mth`).join(' · ');
     const head = title => `<header class="rp-head">
@@ -2194,6 +2194,15 @@
     paintThemeBtn();
   });
   paintThemeBtn();
+  // Tips: show every explanation, or hide them all (the default). Remembered like the theme.
+  const tipsBtn = document.getElementById('tips');
+  const paintTips = () => tipsBtn.setAttribute('aria-pressed', document.documentElement.classList.contains('tips'));
+  tipsBtn.addEventListener('click', () => {
+    const on = document.documentElement.classList.toggle('tips');
+    try { localStorage.setItem('analyser-tips', on ? '1' : '0'); } catch {}
+    paintTips();
+  });
+  paintTips();
   document.addEventListener('click', e => {
     const ex = e.target.closest('[data-export]');
     if (ex) { openExport(ex.dataset.export); return; }
