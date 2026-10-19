@@ -1589,8 +1589,8 @@
       : `<div class="rp">${head(titleFor[k])}${bodyFor[k]}${k === lastCalc ? notes : ''}${foot(!withCover)}</div>`);
 
     const cover = !withCover ? '' : `<div class="rp rp-cover">
-      <div class="cv-top"><div class="cv-kicker">${tlOnly ? TL.title() : 'Home Loan &amp; Cash Plan'}</div>
-        <h1>${forWho ? `Prepared for<br><span>${esc(forWho)}</span>` : tlOnly ? 'Your sale and<br><span>purchase timeline</span>' : 'Your home loan<br><span>and cash plan</span>'}</h1>
+      <div class="cv-top"><div class="cv-kicker">${tlOnly ? TL.title() : 'Property Analysis'}</div>
+        <h1>${forWho ? `Prepared for<br><span>${esc(forWho)}</span>` : tlOnly ? 'Your sale and<br><span>purchase timeline</span>' : 'Your property<br><span>analysis</span>'}</h1>
         <p class="cv-date">${fmtDate(t)} · ${tlOnly ? TL.tag() : `${typeLbl} · ${loanLbl}`}</p></div>
       <div class="cv-agent">
         <img src="img/kenn-kwang.webp" alt="${AGENT.name}">
