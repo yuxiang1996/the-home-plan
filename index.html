@@ -1997,21 +1997,24 @@
   }
   window.addEventListener('afterprint', () => { exportSel = null; buildReport(compute()); });
 
-  function openExport() {
+  // only = a section key when a card's own Export button opened it: just the name and cover, no section list.
+  function openExport(only) {
     const c = compute(), avail = sectionsAvailable(c);
     const dlg = document.getElementById('export-dlg');
+    const titleFor = Object.fromEntries(SECTIONS);
     dlg.innerHTML = `<div class="dlg-card" role="dialog" aria-modal="true" aria-labelledby="dlg-t">
-      <h3 id="dlg-t">Export report</h3>
-      <label class="f full"><span>Prepared for (optional)</span><input type="text" id="dlg-client" value="${esc(state.clientName || '')}" placeholder="Client's name"></label>
-      <p class="block-title" style="margin:16px 0 6px">Sections</p>
+      <h3 id="dlg-t">${only ? `Export ${only === 'tline' ? TL.title() : titleFor[only]}` : 'Export report'}</h3>
+      <label class="f full"><span>Prepared for (optional)</span><input type="text" id="dlg-client" value="${esc(state.clientName || '')}" placeholder="Client's name" autocomplete="off"></label>
+      ${only ? `<input type="checkbox" data-sec="${only}" checked hidden><div class="dlg-list" style="margin-top:14px">` : `<p class="block-title" style="margin:16px 0 6px">Sections</p>
       <div class="dlg-list">
-        ${SECTIONS.map(([k, label]) => `<label class="dlg-row${avail.includes(k) ? '' : ' off'}"><input type="checkbox" data-sec="${k}" ${avail.includes(k) ? 'checked' : 'disabled'}><span>${label}</span>${avail.includes(k) ? '' : `<em>${k === 'sale' ? 'Switch on the sale first' : k === 'buy' || k === 'timeline' ? 'Enter a purchase price first' : k === 'tline' ? 'Switch on the timeline first' : 'Enter income first'}</em>`}</label>`).join('')}
+        ${SECTIONS.map(([k, label]) => `<label class="dlg-row${avail.includes(k) ? '' : ' off'}"><input type="checkbox" data-sec="${k}" ${avail.includes(k) ? 'checked' : 'disabled'}><span>${label}</span>${avail.includes(k) ? '' : `<em>${k === 'sale' ? 'Switch on the sale first' : k === 'buy' || k === 'timeline' ? 'Enter a purchase price first' : k === 'tline' ? 'Switch on the timeline first' : 'Enter income first'}</em>`}</label>`).join('')}`}
         <label class="dlg-row"><input type="checkbox" id="dlg-cover" checked><span>Cover page with your photo</span></label>
       </div>
       <div class="dlg-actions"><button class="ghost" type="button" id="dlg-cancel">Cancel</button><button class="ghost primary" type="button" id="dlg-go">Export PDF</button></div>
     </div>`;
     dlg.hidden = false;
-    dlg.querySelector('#dlg-go').focus();
+    if (only) { const n = dlg.querySelector('#dlg-client'); n.focus(); n.select(); }
+    else dlg.querySelector('#dlg-go').focus();
   }
   function closeExport() { document.getElementById('export-dlg').hidden = true; }
 
@@ -2102,10 +2105,10 @@
     armed = false; e.target.textContent = 'Clear all';
     state = defaults(); save(); renderAll();
   });
-  document.getElementById('print').addEventListener('click', openExport);
+  document.getElementById('print').addEventListener('click', () => openExport());
   document.addEventListener('click', e => {
     const ex = e.target.closest('[data-export]');
-    if (ex) { exportPDF([ex.dataset.export], true); return; }
+    if (ex) { openExport(ex.dataset.export); return; }
     if (e.target.id === 'dlg-cancel' || e.target.id === 'export-dlg') { closeExport(); return; }
     if (e.target.id === 'dlg-go') {
       const keys = [...document.querySelectorAll('#export-dlg [data-sec]:checked')].map(i => i.dataset.sec);
@@ -2117,7 +2120,10 @@
       setTimeout(() => exportPDF(keys, cover), 60);
     }
   });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeExport(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeExport();
+    if (e.key === 'Enter' && e.target.id === 'dlg-client') { e.preventDefault(); document.getElementById('dlg-go').click(); }
+  });
 
   renderAll();
 })();
