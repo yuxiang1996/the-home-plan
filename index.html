@@ -253,7 +253,7 @@
   @media (min-width: 760px) { .dock { display: none; } }
 
   [hidden] { display: none !important; }
-  .typebar { display: flex; align-items: center; gap: 10px 16px; flex-wrap: wrap; background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 12px 16px; margin: 0 0 16px; --c: var(--who); }
+  .typebar { display: flex; align-items: center; gap: 10px 16px; flex-wrap: wrap; background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 12px 16px; margin: 0; --c: var(--who); }
   .typebar .tb-k { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; font-weight: 800; color: var(--muted); }
   .typebar .seg-toggle { display: flex; flex: 1 1 340px; max-width: 460px; }
   .typebar .seg-toggle button { flex: 1 1 0; font-size: 15px; min-height: 42px; padding: 8px 10px; }
@@ -537,13 +537,13 @@
   </header>
 
   <section id="report" aria-hidden="true"></section>
-  <div class="typebar" id="typebar"></div>
 
   <div class="layout">
     <div class="inputs">
+      <section class="panel sale" id="panel-sale"></section>
+      <div class="typebar" id="typebar"></div>
       <section class="panel who" id="panel-who"></section>
       <section class="panel loanp" id="panel-loan"></section>
-      <section class="panel sale" id="panel-sale"></section>
       <section class="panel purchase" id="panel-buy"></section>
     </div>
     <aside class="results" id="results" aria-live="polite"></aside>
@@ -715,12 +715,12 @@
     el.classList.toggle('off', !state.whoOn);
     const sw = `<label class="switch"><input type="checkbox" data-toggle="whoOn" ${state.whoOn ? 'checked' : ''} aria-label="Include buyer details"><span></span></label>`;
     if (!state.whoOn) {
-      el.innerHTML = `<div class="panel-head">${title(1, state.buy.on ? 'Buyers' : 'Clients')}${sw}</div>
+      el.innerHTML = `<div class="panel-head">${title(2, state.buy.on ? 'Buyers' : 'Clients')}${sw}</div>
         <p class="off-hint">Rough numbers only — no income, CPF or savings. Switch on for loan and cash figures.</p>`;
       return;
     }
     el.innerHTML = `
-      <div class="panel-head">${title(1, state.buy.on ? 'Buyers' : 'Clients')}<div class="tl-head-r">${seg('n', [[1, '1 buyer'], [2, '2 buyers']], 'Number of buyers')}${sw}</div></div>
+      <div class="panel-head">${title(2, state.buy.on ? 'Buyers' : 'Clients')}<div class="tl-head-r">${seg('n', [[1, '1 buyer'], [2, '2 buyers']], 'Number of buyers')}${sw}</div></div>
       ${state.n > 1 ? toggle('married', 'Married couple', 'Affects ABSD remission and refund') : toggle('withKids', 'Buying with children under her care', 'Divorced or widowed parent with custody, care and control. HDB treats this as a family: $16,000 loan ceiling, no age-35 rule, new EC allowed')}
       ${state.n > 1 ? '<div style="height:10px"></div>' : ''}
       ${tabs}
@@ -739,7 +739,7 @@
   // Other homes the buyer keeps. Feeds ABSD (properties owned) and LTV (housing loans outstanding).
   function otherProperty(i, c) {
     const b = state.b[i];
-    const head = toggle(`b.${i}.other`, 'Owns other property', "Not counting the home being sold — that's in section 3. Include HDB and overseas");
+    const head = toggle(`b.${i}.other`, 'Owns other property', "Not counting the home being sold — that's in section 1. Include HDB and overseas");
     if (!b.other) return `<div class="block">${head}</div>`;
     const owned = Math.max(1, num(b.owned));
     const loanOpts = [['0', 'None'], ['1', 'On 1'], ...(owned >= 2 ? [['2', 'On 2 or more']] : [])];
@@ -765,12 +765,12 @@
     el.classList.toggle('off', !loanOn);
     const sw = `<label class="switch"><input type="checkbox" data-toggle="loanOn" ${loanOn ? 'checked' : ''}${state.whoOn ? '' : ' disabled'} aria-label="Include the loan from income"><span></span></label>`;
     if (!loanOn) {
-      el.innerHTML = `<div class="panel-head">${title(2, 'Loan from income')}${sw}</div>
-        <p class="off-hint">${state.whoOn ? 'Off — a purchase is shown with a full loan as a rough figure.' : 'Needs buyer details (section 1). A purchase is shown with a full loan as a rough figure.'}</p>`;
+      el.innerHTML = `<div class="panel-head">${title(3, 'Loan from income')}${sw}</div>
+        <p class="off-hint">${state.whoOn ? 'Off — a purchase is shown with a full loan as a rough figure.' : 'Needs buyer details (section 2). A purchase is shown with a full loan as a rough figure.'}</p>`;
       return;
     }
     el.innerHTML = `
-      <div class="panel-head">${title(2, 'Loan from income')}<div class="tl-head-r">${seg('buy.type', [['hdb', 'HDB'], ['private', 'Private'], ['ec', 'EC']], 'Property type')}${sw}</div></div>
+      <div class="panel-head">${title(3, 'Loan from income')}<div class="tl-head-r">${seg('buy.type', [['hdb', 'HDB'], ['private', 'Private'], ['ec', 'EC']], 'Property type')}${sw}</div></div>
       ${s.type === 'private' ? `<div class="sub-toggle">${seg('buy.mode', [['resale', 'Resale'], ['new', 'New launch']], 'Resale or new launch')}</div>` : ''}
       ${s.type === 'ec' ? `<p class="fine" style="margin:0 0 14px">New EC from the developer. For a resale EC, pick Private.</p>` : ''}
       ${hdb ? `<div class="sub-toggle">${wide(seg('buy.loan', [['bank', 'Bank loan'], ['hdb', 'HDB loan']], 'Loan type'))}</div>` : ''}
@@ -787,9 +787,9 @@
   function renderSale() {
     const s = state.sale, el = document.getElementById('panel-sale');
     el.classList.toggle('off', !s.on);
-    const head = `<div class="panel-head">${title(3, 'Sale of current home')}
+    const head = `<div class="panel-head">${title(1, 'Sale of current home')}
       <label class="switch"><input type="checkbox" data-toggle="sale.on" ${s.on ? 'checked' : ''} aria-label="Include a sale"><span></span></label></div>`;
-    if (!s.on) { el.innerHTML = head + '<p class="off-hint">Selling to fund this purchase? Switch on.</p>'; return; }
+    if (!s.on) { el.innerHTML = head + '<p class="off-hint">Selling a property? Switch on. If not, carry on to the buyer profile below.</p>'; return; }
     const owners = saleOwners();
     const hdbLoan = state.buy.type === 'hdb' && state.buy.loan === 'hdb';
     const cpfFields = owners.map(i => `
@@ -1247,8 +1247,44 @@
         <summary><span class="s-open">Show breakdown</span><span class="s-close">Hide breakdown</span></summary>
         <table class="rows">${rows}</table></details>`;
 
+    // Sale proceeds (first, matching the form order)
+    if (c.sale) {
+      const s = c.sale, split = c.owners.length > 1;
+      const cpfRows = split ? c.owners.map(i => row(`Buyer ${i + 1} CPF refund`, money(-s.backBy[i]), 'minor', s.owedBy[i] - s.backBy[i] > 0.5 ? `Of ${money(s.owedBy[i])} owed` : '')).join('') : '';
+      const nextRows = c.B.map((b, i) => row(`Buyer ${i + 1}`, money(c.oaBy[i] + (s.backBy[i] || 0)), '', `OA ${money(c.oaBy[i])} + refund ${money(s.backBy[i] || 0)}`)).join('');
+      html += `<div class="card proceeds"><div class="card-head"><span>Sale proceeds</span><em>${state.sale.type === 'hdb' ? 'HDB' : 'Private'} · ${money(s.price)}</em><button type="button" class="card-export" data-export="sale" title="Export this section as a PDF">Export</button></div>
+        <table class="rows">
+          ${row('Selling price', money(s.price))}
+          ${row('Less loan and CPF refund', money(-(s.loan + s.cpfBackAll)), '', `Loan ${money(s.loan)} · CPF ${money(s.cpfBack)}${s.coOwner ? ` + co-owner ${money(s.coBack)}` : ''}`)}
+          ${row('Less agent, legal and misc fees', money(-(s.agent + s.legal + s.ssd + s.penalty + s.misc)), '', [`Agent 2% + GST ${money(s.agent)}`, `legal ${money(s.legal)}`, s.misc ? `HDB resale and misc ${money(s.misc)}` : '', s.ssd ? `SSD ${money(s.ssd)}` : '', s.penalty ? `bank penalty ${money(s.penalty)}` : ''].filter(Boolean).join(' · '))}
+          ${s.share != null ? row('Cash proceeds', money(s.cash), 'total') : ''}
+          ${row(s.share != null ? (s.shareTyped ? "Cash to client (her share)" : "Cash to client (half)") : 'Cash proceeds', money(s.clientCash), 'total', s.rule50 && s.mustUse > 0 ? `${money(s.mustUse)} must go into the next flat (2nd HDB loan)` : '')}
+          ${row('CPF available for next home', money(c.poolStart), 'total', `Incl. ${money(s.cpfBack)} refunded from the sale`)}
+          ${row('Total for next home', money(Math.max(0, s.clientCash) + c.poolStart), 'total grand', `Cash ${money(Math.max(0, s.clientCash))} + CPF ${money(c.poolStart)}`)}
+        </table>
+        ${more('sale', `
+          ${row('Selling price', money(s.price))}
+          ${row('Outstanding loan', money(-s.loan))}
+          ${row('CPF refund to OA', money(-s.cpfBackAll), '', s.shortCPF > 0.5 ? `Of ${money(s.owed + s.coOwed)} owed — no top-up needed` : 'Principal + accrued interest')}
+          ${s.coOwner ? row("Co-owner's CPF refund", money(-s.coBack), 'minor', 'To their own OA — not for the client') : ''}
+          ${cpfRows}
+          ${row("Seller's agent fee", money(-s.agent), '', '2% + 9% GST · cash')}
+          ${row('Legal fees', money(-s.legal), '', 'Cash only — CPF cannot pay sale fees')}
+          ${s.misc ? row('HDB resale and misc fees', money(-s.misc), '', 'Resale application $80 + misc $150 (caveat, admin)') : ''}
+          ${s.ssd ? row("Seller's Stamp Duty", money(-s.ssd), 'hl', s.ssdNote) : ''}
+          ${s.penalty ? row('Bank penalty / clawback', money(-s.penalty)) : ''}
+          ${row('Cash proceeds', money(s.cash), 'total')}
+          ${s.share != null ? row("Client's share", money(s.share), 'hl', s.shareTyped ? 'Entered — divorce or co-owner split' : 'Half — co-owner gets the other half') : ''}
+          ${s.rule50 && s.mustUse > 0 ? row('of which must go into the flat', money(s.mustUse), 'minor', `2nd HDB loan rule. Client keeps ${money(s.keepCash)}`) : ''}
+          <tr class="sub"><td colspan="2">CPF OA for the next home</td></tr>
+          ${nextRows}
+          ${c.grants ? row('CPF housing grants', money(c.grants)) : ''}
+          ${row('CPF available', money(c.poolStart), 'total')}`)}
+      </div>`;
+    }
+
     // 1. Loan from income
-    if (!state.buy.on && !c.sale) html += `<div class="card prep"><div class="card-head"><span>Nothing to show</span></div><div class="empty">Switch on the sale (section 3) or the purchase (section 4).</div></div>`;
+    if (!state.buy.on && !c.sale) html += `<div class="card prep"><div class="card-head"><span>Nothing to show</span></div><div class="empty">Switch on the sale (section 1) or the purchase (section 4).</div></div>`;
     if (!c.loanOn) { /* loan section switched off */ }
     else if (!c.income) {
       if (state.buy.on) html += `<div class="card loan"><div class="card-head"><span>Loan from income</span><em>${typeLbl} · ${loanLbl}</em></div>
@@ -1317,42 +1353,6 @@
           ${c.otherBuy ? row('Other costs', money(c.otherBuy)) : ''}
           ${f.levy ? row('HDB resale levy', money(f.levy), 'hl', 'Cash only') : ''}
           ${row('Total stamp duty and fees', money(f.fees), 'total')}`)}
-      </div>`;
-    }
-
-    // 3. Sale proceeds
-    if (c.sale) {
-      const s = c.sale, split = c.owners.length > 1;
-      const cpfRows = split ? c.owners.map(i => row(`Buyer ${i + 1} CPF refund`, money(-s.backBy[i]), 'minor', s.owedBy[i] - s.backBy[i] > 0.5 ? `Of ${money(s.owedBy[i])} owed` : '')).join('') : '';
-      const nextRows = c.B.map((b, i) => row(`Buyer ${i + 1}`, money(c.oaBy[i] + (s.backBy[i] || 0)), '', `OA ${money(c.oaBy[i])} + refund ${money(s.backBy[i] || 0)}`)).join('');
-      html += `<div class="card proceeds"><div class="card-head"><span>Sale proceeds</span><em>${state.sale.type === 'hdb' ? 'HDB' : 'Private'} · ${money(s.price)}</em><button type="button" class="card-export" data-export="sale" title="Export this section as a PDF">Export</button></div>
-        <table class="rows">
-          ${row('Selling price', money(s.price))}
-          ${row('Less loan and CPF refund', money(-(s.loan + s.cpfBackAll)), '', `Loan ${money(s.loan)} · CPF ${money(s.cpfBack)}${s.coOwner ? ` + co-owner ${money(s.coBack)}` : ''}`)}
-          ${row('Less agent, legal and misc fees', money(-(s.agent + s.legal + s.ssd + s.penalty + s.misc)), '', [`Agent 2% + GST ${money(s.agent)}`, `legal ${money(s.legal)}`, s.misc ? `HDB resale and misc ${money(s.misc)}` : '', s.ssd ? `SSD ${money(s.ssd)}` : '', s.penalty ? `bank penalty ${money(s.penalty)}` : ''].filter(Boolean).join(' · '))}
-          ${s.share != null ? row('Cash proceeds', money(s.cash), 'total') : ''}
-          ${row(s.share != null ? (s.shareTyped ? "Cash to client (her share)" : "Cash to client (half)") : 'Cash proceeds', money(s.clientCash), 'total', s.rule50 && s.mustUse > 0 ? `${money(s.mustUse)} must go into the next flat (2nd HDB loan)` : '')}
-          ${row('CPF available for next home', money(c.poolStart), 'total', `Incl. ${money(s.cpfBack)} refunded from the sale`)}
-          ${row('Total for next home', money(Math.max(0, s.clientCash) + c.poolStart), 'total grand', `Cash ${money(Math.max(0, s.clientCash))} + CPF ${money(c.poolStart)}`)}
-        </table>
-        ${more('sale', `
-          ${row('Selling price', money(s.price))}
-          ${row('Outstanding loan', money(-s.loan))}
-          ${row('CPF refund to OA', money(-s.cpfBackAll), '', s.shortCPF > 0.5 ? `Of ${money(s.owed + s.coOwed)} owed — no top-up needed` : 'Principal + accrued interest')}
-          ${s.coOwner ? row("Co-owner's CPF refund", money(-s.coBack), 'minor', 'To their own OA — not for the client') : ''}
-          ${cpfRows}
-          ${row("Seller's agent fee", money(-s.agent), '', '2% + 9% GST · cash')}
-          ${row('Legal fees', money(-s.legal), '', 'Cash only — CPF cannot pay sale fees')}
-          ${s.misc ? row('HDB resale and misc fees', money(-s.misc), '', 'Resale application $80 + misc $150 (caveat, admin)') : ''}
-          ${s.ssd ? row("Seller's Stamp Duty", money(-s.ssd), 'hl', s.ssdNote) : ''}
-          ${s.penalty ? row('Bank penalty / clawback', money(-s.penalty)) : ''}
-          ${row('Cash proceeds', money(s.cash), 'total')}
-          ${s.share != null ? row("Client's share", money(s.share), 'hl', s.shareTyped ? 'Entered — divorce or co-owner split' : 'Half — co-owner gets the other half') : ''}
-          ${s.rule50 && s.mustUse > 0 ? row('of which must go into the flat', money(s.mustUse), 'minor', `2nd HDB loan rule. Client keeps ${money(s.keepCash)}`) : ''}
-          <tr class="sub"><td colspan="2">CPF OA for the next home</td></tr>
-          ${nextRows}
-          ${c.grants ? row('CPF housing grants', money(c.grants)) : ''}
-          ${row('CPF available', money(c.poolStart), 'total')}`)}
       </div>`;
     }
 
@@ -1536,9 +1536,9 @@
   // ---------- Print report: cover page, then one page per chosen section ----------
   // Sections a report can carry, in print order. Each card's Export button prints one; the header button picks several.
   const SECTIONS = [
+    ['sale', 'Sale of current home'],
     ['loan', 'Loan from income'],
     ['afford', 'Max affordability'],
-    ['sale', 'Sale of current home'],
     ['buy', 'Purchase breakdown'],
     ['timeline', 'Payment timeline'],
     ['tline', 'Sale & purchase timeline'],
