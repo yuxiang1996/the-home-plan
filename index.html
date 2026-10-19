@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Analyser</title>
+<script>try { const t = localStorage.getItem('analyser-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -303,6 +304,75 @@
   .tl-seg.ext { background: var(--soft); border-radius: 10px; padding: 10px 12px; border-top: 0; margin-top: 4px; }
   .tl-side .switch-row { border-top: 1px dashed var(--line); }
   #report { display: none; }
+  .theme-btn { min-width: 44px; padding-inline: 12px; font-size: 16px; line-height: 1; }
+
+  /* Dark theme: screen only, so the printed report always stays light */
+  @media screen {
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --ink: #f2f4f3; --muted: #bcc4c0; --faint: #939d99; --line: #36403c;
+      --bg: #0e1311; --card: #1b2220; --field: #141a18;
+      --sale: #5ccab3; --sale-soft: #163430; --buy: #f4a95e; --buy-soft: #36271a;
+      --who: #ecc768; --who-soft: #2e2814; --plum: #bcadff; --plum-soft: #29233f;
+      --gap: #ff8b72; --gap-soft: #3a201b;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 10px 30px -8px rgba(0, 0, 0, .55);
+    }
+    [data-theme="dark"] body { background-image: radial-gradient(1200px 600px at 85% -10%, rgba(214, 165, 79, .07), transparent 60%), radial-gradient(900px 600px at -10% 110%, rgba(82, 181, 161, .06), transparent 60%); background-size: auto; }
+    [data-theme="dark"] button.ghost:hover { border-color: #46504c; }
+    [data-theme="dark"] button.primary { background: #ecc768; color: #1a1406; border-color: #ecc768; }
+    [data-theme="dark"] button.primary:hover { background: #f5d888; border-color: #f5d888; }
+    [data-theme="dark"] .theme-btn { color: #ecc768; border-color: #5a4b22; }
+    [data-theme="dark"] h1 { color: #ecc768; }
+    [data-theme="dark"] .typebar .tb-k, [data-theme="dark"] .block-title { color: #ecc768; }
+    [data-theme="dark"] .dock b { color: #ecc768; }
+    [data-theme="dark"] .card-head { box-shadow: inset 0 -2px 0 rgba(236, 199, 104, .55); }
+    [data-theme="dark"] .seg-toggle { background: #111614; }
+    [data-theme="dark"] .seg-toggle button.on { background: #2a3330; box-shadow: 0 1px 3px rgba(0, 0, 0, .5); }
+    [data-theme="dark"] input::placeholder { color: #5d6763; }
+    [data-theme="dark"] input:hover, [data-theme="dark"] select:hover { border-color: #3d4643; }
+    [data-theme="dark"] input:disabled { background-color: #1e2522; }
+    [data-theme="dark"] input:focus, [data-theme="dark"] select:focus { background-color: #0f1412; }
+    [data-theme="dark"] select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23a4ada9' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+    [data-theme="dark"] .block, [data-theme="dark"] .switch-row + .switch-row { border-top-color: #262d2a; }
+    [data-theme="dark"] .switch span { background: #3a4340; }
+    [data-theme="dark"] .card.prep .card-head { background: #2d3532; }
+    [data-theme="dark"] .rows td, [data-theme="dark"] .more > .rows, [data-theme="dark"] .tl, [data-theme="dark"] .tl li, [data-theme="dark"] .ways { border-color: #262d2a; }
+    [data-theme="dark"] .rows tr.sub td { background: #151b18; }
+    [data-theme="dark"] .rows tr.total td { background: #1f2724; }
+    [data-theme="dark"] .rows tr.hl td { background: #2b2414; }
+    [data-theme="dark"] .rows tr.good td { background: #15302a; }
+    [data-theme="dark"] .rows tr.total.hl td { color: #e8b862; }
+    [data-theme="dark"] .bar { background: #2a3330; }
+    [data-theme="dark"] .more > summary { border-color: #5a4b22; }
+    [data-theme="dark"] .more > summary:hover { background: #3a3218; border-color: #8a7232; }
+    [data-theme="dark"] .more[open] > summary { background: var(--card); }
+    [data-theme="dark"] .tl-stats > div { background: #1f2724; border-color: #2d3532; }
+    [data-theme="dark"] .tl-stats .hi { background: var(--plum-soft); border-color: #3a3256; }
+    [data-theme="dark"] .tl li.ph { background: #211d14; border-bottom-color: #3a3220; }
+    [data-theme="dark"] .tl li.top { background: #262014; }
+    [data-theme="dark"] .ways { background: #1f1c14; }
+    [data-theme="dark"] .dock { background: rgba(36, 44, 41, .97); }
+    [data-theme="dark"] .dock a { color: #0f1412; }
+    [data-theme="dark"] #export-dlg { background: rgba(0, 0, 0, .6); }
+    [data-theme="dark"] .tl-chart, [data-theme="dark"] .tl-side { background: #151b18; }
+    /* Timeline chart on screen (the PDF copy is drawn separately and stays light) */
+    [data-theme="dark"] #tl-chart [fill="#15201c"] { fill: #f2f4f3; }
+    [data-theme="dark"] #tl-chart [fill="#66706c"] { fill: #bcc4c0; }
+    [data-theme="dark"] #tl-chart [fill="#98a09c"] { fill: #939d99; }
+    [data-theme="dark"] #tl-chart [stroke="#fff"] { stroke: #151b18; }
+    [data-theme="dark"] #tl-chart [fill="#fff"] { fill: #151b18; }
+    [data-theme="dark"] #tl-chart [stroke="#15201c"] { stroke: #ecc768; }
+    [data-theme="dark"] #tl-chart [stroke="#efece4"] { stroke: #232b28; }
+    [data-theme="dark"] #tl-chart [stroke="#c5cbc8"] { stroke: #4a5450; }
+    [data-theme="dark"] #tl-chart [fill="#0d5c50"] { fill: #5ccab3; }
+    [data-theme="dark"] #tl-chart [stroke="#0d5c50"] { stroke: #5ccab3; }
+    [data-theme="dark"] #tl-chart [fill="#a47a2c"] { fill: #f4a95e; }
+    [data-theme="dark"] #tl-chart [stroke="#a47a2c"] { stroke: #f4a95e; }
+    [data-theme="dark"] #tl-chart [fill="#b3402e"] { fill: #ff8b72; }
+    [data-theme="dark"] #tl-chart [stroke="#b3402e"] { stroke: #ff8b72; }
+    [data-theme="dark"] #tl-chart [fill="#4a3d78"] { fill: #bcadff; }
+    [data-theme="dark"] #tl-chart [stroke="#4a3d78"] { stroke: #bcadff; }
+  }
   /* Margin 0 stops the browser printing its own date, title and URL in the page margins. */
   @page { size: A4 portrait; margin: 0; }
   @page land { size: A4 landscape; margin: 0; }
@@ -449,6 +519,7 @@
       <p class="tagline">How much you can borrow, and the cash and CPF you need. Singapore rules as at Oct 2026.</p>
     </div>
     <div class="actions">
+      <button class="ghost theme-btn" id="theme" type="button" aria-label="Switch to dark theme"></button>
       <button class="ghost primary" id="print">Export PDF</button>
       <button class="ghost" id="reset">Clear all</button>
     </div>
@@ -2108,6 +2179,21 @@
     state = defaults(); save(); renderAll();
   });
   document.getElementById('print').addEventListener('click', () => openExport());
+  // Light / dark theme for the screen only; remembered apart from the client data, so Clear all keeps it.
+  const themeBtn = document.getElementById('theme');
+  const paintThemeBtn = () => {
+    const dark = document.documentElement.dataset.theme === 'dark';
+    themeBtn.textContent = dark ? '\u2600' : '\u263E';
+    themeBtn.setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
+    themeBtn.title = dark ? 'Light theme' : 'Dark theme';
+  };
+  themeBtn.addEventListener('click', () => {
+    const t = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = t;
+    try { localStorage.setItem('analyser-theme', t); } catch {}
+    paintThemeBtn();
+  });
+  paintThemeBtn();
   document.addEventListener('click', e => {
     const ex = e.target.closest('[data-export]');
     if (ex) { openExport(ex.dataset.export); return; }
