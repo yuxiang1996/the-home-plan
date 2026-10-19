@@ -475,7 +475,7 @@
 
 <div id="export-dlg" hidden></div>
 <div class="dock" id="dock"><div class="in">
-  <div><small>Max price</small><b id="dock-loan">—</b></div>
+  <div><small id="dock-loan-lbl">Max price</small><b id="dock-loan">—</b></div>
   <div><small id="dock-cash-lbl">Cash needed</small><b id="dock-cash">—</b></div>
   <a href="#results">See breakdown</a>
 </div></div>
@@ -563,7 +563,7 @@
   const defaults = () => ({
     n: 1, married: true, withKids: false, clientName: '',
     b: [blankBuyer(), blankBuyer()],
-    buy: { type: 'private', mode: 'resale', price: '', val: '', lease: '', loan: 'bank', rate: '2.0', stress: '4.0', tenure: '', grants: '', keep: '', legal: null, hdbLegal: false, valFee: null, other: '', levyOn: false, levyType: '4', levySingle: false, levy: null, grantPHG: false, cashUse: '' },
+    buy: { on: true, type: 'private', mode: 'resale', price: '', val: '', lease: '', loan: 'bank', rate: '2.0', stress: '4.0', tenure: '', grants: '', keep: '', legal: null, hdbLegal: false, valFee: null, other: '', levyOn: false, levyType: '4', levySingle: false, levy: null, grantPHG: false, cashUse: '' },
     tl: tlDefaults(),
     sale: { on: false, type: 'hdb', owner: 'both', price: '', loan: '', cpf: [{ p: '', i: '' }, { p: '', i: '' }], first: true, repaid: true, hdb2nd: true, contra: true, bought: '', legal: null, hdbLegal: false, penalty: '', share: '', coOwner: false, coP: '', coI: '' },
   });
@@ -629,7 +629,7 @@
         ${[0, 1].map(k => `<button type="button" role="tab" data-buyer="${k}" class="${k === i ? 'on' : ''}" aria-selected="${k === i}">Buyer ${k + 1}<em>${esc(buyerSummary(state.b[k]))}</em></button>`).join('')}
       </div>` : '';
     el.innerHTML = `
-      <div class="panel-head">${title(1, 'Buyers')}${seg('n', [[1, '1 buyer'], [2, '2 buyers']], 'Number of buyers')}</div>
+      <div class="panel-head">${title(1, state.buy.on ? 'Buyers' : 'Clients')}${seg('n', [[1, '1 buyer'], [2, '2 buyers']], 'Number of buyers')}</div>
       ${state.n > 1 ? toggle('married', 'Married couple', 'Affects ABSD remission and refund') : toggle('withKids', 'Buying with children under her care', 'Divorced or widowed parent with custody, care and control. HDB treats this as a family: $16,000 loan ceiling, no age-35 rule, new EC allowed')}
       ${state.n > 1 ? '<div style="height:10px"></div>' : ''}
       ${tabs}
@@ -739,8 +739,12 @@
     const s = state.buy, el = document.getElementById('panel-buy');
     const hdb = s.type === 'hdb', hdbLoan = hdb && s.loan === 'hdb';
     const fresh = isNew();
-    el.innerHTML = `
-      <div class="panel-head">${title(4, 'Purchase')}<span class="fine" style="margin:0">Optional — leave blank to see the max budget</span></div>
+    el.classList.toggle('off', !s.on);
+    const head = `<div class="panel-head">${title(4, 'Purchase')}
+      <label class="switch"><input type="checkbox" data-toggle="buy.on" ${s.on ? 'checked' : ''} aria-label="Include a purchase"><span></span></label></div>`;
+    if (!s.on) { el.innerHTML = head + '<p class="off-hint">Selling only — no purchase. Switch on to add one.</p>'; return; }
+    el.innerHTML = `${head}
+      <p class="fine" style="margin:-6px 0 12px">Leave the price blank to see the max budget.</p>
       <div class="grid2">
         ${moneyField('buy.price', 'Purchase price', { full: fresh })}
         ${fresh ? '' : moneyField('buy.val', 'Valuation', { ph: 'Same as price', hint: 'Fill in to check COV' })}
@@ -799,6 +803,7 @@
     const rule = c.hdbLoan ? 'HDB loan: <b>MSR 30%</b> of income, tested at 3%'
       : c.hdb || c.ec ? 'Bank loan: <b>MSR 30%</b> for home loans and <b>TDSR 55%</b> for all debts, tested at 4%'
       : 'Bank loan: <b>TDSR 55%</b> of income for all debts, tested at 4% — MSR does not apply to private property';
+    document.getElementById('typebar').hidden = !state.buy.on;
     document.getElementById('typebar').innerHTML = `<span class="tb-k">Buying</span>
       ${seg('buy.type', [['hdb', 'HDB flat'], ['private', 'Private property'], ['ec', 'New EC']], 'Property type')}
       <span class="tb-rule">${rule}</span>`;
@@ -872,6 +877,7 @@
       if (price && sale.shortCPF > 0.5 && grossP >= 0) flags.push(['info', `Sale proceeds cover only ${money(cpfBack)} of the ${money(owed)} CPF to refund. For a sale at market value, CPF does not ask you to top up the shortfall.`]);
     }
 
+    const saleFlags = flags.length;
     // ----- Loan count & tenure -----
     const saleLoanCounts = sl.on && !sl.repaid && num(sl.loan) > 0;
     const loansOut = Math.min(2, Math.max(...B.map((b, i) => num(b.loans) + (saleLoanCounts && owners.includes(i) ? 1 : 0))));
@@ -1006,7 +1012,7 @@
     // client funding the downpayment. Cash on hand does not cap it — any shortfall shows as a top-up.
     // If CPF + cash cover more than that downpayment, the price can go higher (all money counted together).
     let budget = null;
-    if (income > 0 || poolStart > 0 || cashAvail > 0) {
+    if (s.on && (income > 0 || poolStart > 0 || cashAvail > 0)) {
       const pLoan = ltv > 0 ? Math.floor(incomeLoanR / ltv) : 0;
       const money_ = poolStart + Math.max(0, cashAvail);
       const covers = P => { const f = fund(P, P, poolStart); return Math.min(f.maxLoan, incomeLoanR) + money_ >= P + f.fees; };
@@ -1023,7 +1029,7 @@
     }
 
     // ----- At the entered price -----
-    const P = num(s.price);
+    const P = s.on ? num(s.price) : 0;
     const V = fresh ? P : (has(s.val) ? num(s.val) : P);
     const at = P ? fund(P, V) : null;
     const topUp = at ? at.cashNeeded - saleCash : 0;
@@ -1106,6 +1112,11 @@
     if (at && at.binding !== 'LTV' && at.loan > 0) flags.push(['info', `Income caps this loan, not LTV. ${incomeRule} at the ${stress}% stress rate supports ${money(incomeLoan)}.`]);
     if (sl.on) flags.push(['info', 'Sale proceeds and the CPF refund arrive only when the sale completes. The deposit and stamp duty fall due earlier, so plan that cash first.']);
 
+    // Selling only: drop the purchase notes, keep the sale's own.
+    if (!s.on) {
+      flags.splice(saleFlags);
+      if (sale && sale.coOwner) flags.push(['info', `Co-owner: ${money(sale.coBack)} of CPF is refunded to the co-owner's own OA. The client ${sale.shareTyped ? 'receives' : 'is assumed to receive half the cash,'} ${money(sale.clientCash)}${sale.shareTyped ? '' : ' — type the actual split if it differs'}.`]);
+    }
     return { B, hdb, ec, hdbLoan, fresh, iwaa, youngest, agesKnown, income, grossTotal, tenure, autoTenure, tenureHint, cap75, capMax, lowTier,
       ltv, minCashPct, stress, rate, incomeLoan, incomeLoanR, incomeRule, assessed, tdsrRoom, msrRoom, allowance, useMSR, loansOut, leaseFactor, absdRate, absdNote, absdRefund,
       gapInfo, levy, levyAuto, cashDefault, cashFloor, cashUseIn, downCap, oaBy, oaTotal, grants, keep, poolStart, cpfMin, cpfUseIn, cpfLimit, savings, saleCash, cashAvail, legalBuy, otherBuy, owners,
@@ -1133,8 +1144,9 @@
         <table class="rows">${rows}</table></details>`;
 
     // 1. Loan from income
+    if (!state.buy.on && !c.sale) html += `<div class="card prep"><div class="card-head"><span>Nothing to show</span></div><div class="empty">Switch on the sale (section 3) or the purchase (section 4).</div></div>`;
     if (!c.income) {
-      html += `<div class="card loan"><div class="card-head"><span>Loan from income</span><em>${typeLbl} · ${loanLbl}</em></div>
+      if (state.buy.on) html += `<div class="card loan"><div class="card-head"><span>Loan from income</span><em>${typeLbl} · ${loanLbl}</em></div>
         <div class="empty">Enter each buyer's age and income to see how much they can borrow.</div></div>`;
     } else {
       const supports = c.ltv > 0 ? Math.floor(c.incomeLoanR / c.ltv) : 0;
@@ -1395,8 +1407,15 @@
   };
 
   function updateDock(c) {
-    document.getElementById('dock-loan').textContent = c.budget ? money(c.budget.maxPrice) : '—';
     const lbl = document.getElementById('dock-cash-lbl'), v = document.getElementById('dock-cash');
+    if (!state.buy.on) {
+      document.getElementById('dock-loan-lbl').textContent = 'Cash from sale';
+      document.getElementById('dock-loan').textContent = c.sale ? money(c.sale.clientCash) : '—';
+      lbl.textContent = 'CPF refund'; v.textContent = c.sale ? money(c.sale.cpfBack) : '—';
+      return;
+    }
+    document.getElementById('dock-loan-lbl').textContent = 'Max price';
+    document.getElementById('dock-loan').textContent = c.budget ? money(c.budget.maxPrice) : '—';
     if (c.at) { lbl.textContent = c.shortfall > 0.5 ? 'Cash short' : 'Cash left over'; v.textContent = money(Math.abs(c.shortfall)); }
     else { lbl.textContent = 'Loan from income'; v.textContent = c.income ? money(c.incomeLoanR) : '—'; }
   }
