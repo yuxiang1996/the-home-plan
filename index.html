@@ -574,7 +574,9 @@
     state = saved ? { ...d, ...saved, buy: { ...d.buy, ...saved.buy }, sale: { ...d.sale, ...saved.sale }, b: [0, 1].map(i => ({ ...blankBuyer(), ...(saved.b || [])[i] })), tl: tlMerge(saved.tl) } : d;
     // Bring over anything typed into the old stand-alone timeline site (same origin).
     if (!saved || !saved.tl) { const old = JSON.parse(localStorage.getItem('timeline-builder-v1') || 'null'); if (old && old.sale) state.tl = tlMerge({ ...old, on: true }); }
-    state.b.forEach(b => { if (b.other === false && (num(b.owned) > 0 || num(b.loans) > 0 || num(b.propLoans) > 0)) b.other = true; });
+    // Saves from before the "Owns other property" switch existed: switch it on if they had property filled in.
+    // Only when the switch was never saved — otherwise a switched-off buyer kept their old count and came back on.
+    state.b.forEach((b, i) => { const raw = ((saved && saved.b) || [])[i] || {}; if (!('other' in raw) && (num(b.owned) > 0 || num(b.loans) > 0 || num(b.propLoans) > 0)) b.other = true; });
     // older saves kept one combined CPF figure for the sale
     if (!Array.isArray(state.sale.cpf)) state.sale.cpf = [{ p: '', i: '' }, { p: '', i: '' }];
     if (saved && saved.sale && ('cpfP' in saved.sale)) { state.sale.cpf[0] = { p: saved.sale.cpfP || '', i: saved.sale.cpfI || '' }; delete state.sale.cpfP; delete state.sale.cpfI; }
