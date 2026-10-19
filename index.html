@@ -312,6 +312,8 @@
     body { font-size: 11px; }
     .wrap { max-width: none; padding: 0; }
     .wrap > :not(#report), .dock, #export-dlg { display: none !important; }
+    /* Browser extensions add their own elements to the end of <body>; printed, they make a blank last page. */
+    body > :not(.wrap) { display: none !important; }
     /* Cover page */
     .rp-cover { height: 296mm; display: flex; flex-direction: column; padding: 24mm 20mm 14mm; position: relative; overflow: hidden;
       background: radial-gradient(700px 500px at 100% 0%, rgba(164, 122, 44, .16), transparent 60%), radial-gradient(600px 500px at 0% 100%, rgba(13, 92, 80, .12), transparent 60%), #fbf8f1; }
