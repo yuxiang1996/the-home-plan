@@ -899,6 +899,14 @@
         </div>
         <p class="fine">${fresh ? 'No buyer\'s agent fee on a new launch or EC.' : 'Buyer\'s agent fee: 1% + GST.'}</p>
       </div>
+      ${roughMode ? `<div class="block">
+        <p class="block-title">Loan</p>
+        <div class="grid2">
+          ${hdbLoan ? numField('buy.rate', 'Interest rate', '%', { value: HDB_RATE.toFixed(1), disabled: true, hint: 'HDB, fixed' })
+                    : numField('buy.rate', 'Interest rate', '%', { ph: '2.0', hint: 'Used for the instalments. Packages now 1.4–2.3%' })}
+          ${numField('buy.tenure', 'Loan tenure', 'yrs', { value: has(s.tenure) ? s.tenure : (c ? c.autoTenure : ''), hint: c ? c.tenureHint : '' })}
+        </div>
+      </div>` : ''}
       ${fresh ? `<div class="block">
         <p class="block-title">Payment timeline</p>
         <div class="grid2">
@@ -1456,11 +1464,11 @@
           <div class="tl-e"><b>${x.ev}</b><small>${x.d ? `<span class="tl-d">${x.dateLbl}</span> · ${x.when}` : x.when}</small>${x.note ? `<small>${x.note}</small>` : ''}</div>
           <div class="tl-a">${x.amt ? `<b>${money(x.amt)}</b><small>${x.ev === 'Stamp duty' ? '' : `${share} · `}${payer}</small>` : ''}${x.bank ? `<em>${money(x.inst)}/mth</em>` : ''}</div></li>`;
       };
-      html += `<div class="card cost"><div class="card-head"><span>Payment timeline</span><em>New launch · rough</em><button type="button" class="card-export" data-export="timeline" title="Export this section as a PDF">Export</button></div>
+      html += `<div class="card cost"><div class="card-head"><span>Payment timeline</span><em>${c.rate}% · ${yrs(c.tenure)}</em><button type="button" class="card-export" data-export="timeline" title="Export this section as a PDF">Export</button></div>
         <div class="tl-stats">
           <div><span>Paid before the loan starts</span><b>${money(sch.beforeLoan)}</b><small>Downpayment + stamp duty</small></div>
           <div><span>Instalment at TOP</span><b>${money(sch.instTop)}</b><small>${sch.top ? `~ ${fmtMonth(sch.top)}` : '85% of the price paid'}</small></div>
-          <div class="hi"><span>Full monthly instalment</span><b>${money(sch.instFull)}</b><small>After CSC · ${money(c.at.loan)} at ${c.rate}%</small></div>
+          <div class="hi"><span>Full monthly instalment</span><b>${money(sch.instFull)}</b><small>After CSC · ${money(c.at.loan)} at ${c.rate}% over ${yrs(c.tenure)}</small></div>
         </div>
         <ol class="tl">
           <li class="ph">Before construction</li>${sch.steps.slice(0, 4).map(li).join('')}
@@ -1714,7 +1722,7 @@
       timeline = `<div class="rp-stats">
           <div><span>Paid before the loan starts</span><b>${money(sch.beforeLoan)}</b><small>Downpayment + stamp duty</small></div>
           <div><span>Instalment at TOP</span><b>${money(sch.instTop)}</b><small>${sch.top ? `~ ${fmtMonth(sch.top)}` : '85% of the price paid'}</small></div>
-          <div class="hi"><span>Full monthly instalment</span><b>${money(sch.instFull)}</b><small>After CSC · ${money(c.at.loan)} at ${c.rate}%</small></div>
+          <div class="hi"><span>Full monthly instalment</span><b>${money(sch.instFull)}</b><small>After CSC · ${money(c.at.loan)} at ${c.rate}% over ${yrs(c.tenure)}</small></div>
         </div>
         <table class="rp-tl">
           <colgroup><col class="no"><col class="st"><col class="wh"><col class="sh"><col class="pb"><col class="am"><col class="in"></colgroup>
