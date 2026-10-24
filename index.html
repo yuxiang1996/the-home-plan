@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Analyser</title>
 <script>try { if (localStorage.getItem('analyser-tips') === '1') document.documentElement.classList.add('tips'); } catch (e) {}</script>
-<script>try { const t = localStorage.getItem('analyser-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); document.documentElement.dataset.theme = t; } catch (e) {}</script>
+<script>document.documentElement.dataset.theme = 'light'; try { localStorage.removeItem('analyser-theme'); } catch (e) {}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -2144,9 +2144,17 @@
   function exportPDF(keys, cover = true) {
     exportSel = { keys, cover };
     buildReport(compute());
+    themeBeforePrint = document.documentElement.dataset.theme;
+    document.documentElement.dataset.theme = 'light';
     window.print();
   }
-  window.addEventListener('afterprint', () => { exportSel = null; buildReport(compute()); });
+  let themeBeforePrint = null;
+  window.addEventListener('beforeprint', () => { if (themeBeforePrint == null) { themeBeforePrint = document.documentElement.dataset.theme; document.documentElement.dataset.theme = 'light'; } });
+  window.addEventListener('afterprint', () => {
+    exportSel = null; buildReport(compute());
+    if (themeBeforePrint) document.documentElement.dataset.theme = themeBeforePrint;
+    themeBeforePrint = null;
+  });
 
   // only = a section key when a card's own Export button opened it: just the name and cover, no section list.
   function openExport(only) {
@@ -2268,7 +2276,6 @@
   themeBtn.addEventListener('click', () => {
     const t = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
     document.documentElement.dataset.theme = t;
-    try { localStorage.setItem('analyser-theme', t); } catch {}
     paintThemeBtn();
   });
   paintThemeBtn();
