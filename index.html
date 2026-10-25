@@ -411,6 +411,9 @@
   @page land { size: A4 landscape; margin: 0; }
   @media print {
     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    /* Safari (iPad/iPhone) prints blurred shadows as solid black boxes, and can carry the device's dark mode into the print. */
+    :root, :root[data-theme] { color-scheme: light only; }
+    *, *::before, *::after { box-shadow: none !important; text-shadow: none !important; filter: none !important; }
     html, body { background: #fff; }
     body { font-size: 11px; }
     .wrap { max-width: none; padding: 0; }
@@ -427,7 +430,7 @@
     .rp-cover h1 { font-family: var(--serif); font-weight: 600; font-size: 42px; line-height: 1.08; letter-spacing: -0.015em; margin: 14px 0 12px; }
     .rp-cover h1 span { color: var(--sale); }
     .cv-date { color: var(--muted); font-size: 12px; margin: 0; }
-    .cv-agent { margin-top: 22mm; display: flex; gap: 22px; align-items: center; padding: 18px 20px; background: #fff; border-radius: 18px; box-shadow: 0 10px 30px -10px rgba(40, 30, 10, .25); border-top: 4px solid var(--buy); }
+    .cv-agent { margin-top: 22mm; display: flex; gap: 22px; align-items: center; padding: 18px 20px; background: #fff; border-radius: 18px; border: 1px solid #e6dfcf; border-top: 4px solid var(--buy); }
     .cv-agent img { width: 128px; height: 160px; object-fit: cover; object-position: top center; border-radius: 12px; flex: none; }
     .cv-by { font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); font-weight: 800; }
     .cv-name { font-family: var(--serif); font-size: 30px; font-weight: 600; line-height: 1.1; margin-top: 4px; }
@@ -504,7 +507,7 @@
     .rp-tl td.in span { color: var(--faint); font-weight: 400; }
     .rp-tl tr.ph td { font-size: 8.5px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; color: var(--buy); padding: 9px 0 4px; border-bottom: 1px solid #e4dccb; }
     .rp-tl tr.top td { background: #fbf6ea; }
-    .rp-tl tr.top td.no { box-shadow: inset 3px 0 0 var(--buy); }
+    .rp-tl tr.top td.no { border-left: 3px solid var(--buy); }
     .rp-tl + .rp-notes { margin-top: 8px; }
     .rp-notes { margin: 4px 0 0; padding: 0; list-style: none; }
     .rp-notes li { position: relative; padding: 0 0 5px 13px; font-size: 10px; line-height: 1.5; }
