@@ -904,7 +904,7 @@
           ${fresh ? '' : moneyField('buy.valFee', 'Valuation fee', { value: s.valFee ?? VAL_FEE })}
           ${moneyField('buy.other', 'Other costs', { full: !fresh, hint: 'Renovation, furniture, moving' })}
         </div>
-        <p class="fine">${fresh ? 'No buyer\'s agent fee on a new launch or EC.' : 'Buyer\'s agent fee: 1% + GST.'}</p>
+        <p class="fine">${hdb ? "Buyer's agent fee: 1% + GST." : "No buyer's agent fee on a private purchase."}</p>
       </div>
       ${roughMode ? `<div class="block">
         <p class="block-title">Loan</p>
@@ -1123,7 +1123,7 @@
       const maxLoan = Math.floor(Math.min(ltvLoan, incomeLoan) / 100) * 100;
       const dutyBase = Math.max(P, V);
       const BSD = bsd(dutyBase), ABSDamt = Math.round(dutyBase * absdRate);
-      const agentBuy = fresh ? 0 : P * AGENT_BUY * (1 + GST);
+      const agentBuy = hdb ? P * AGENT_BUY * (1 + GST) : 0; // private buyers usually pay no agent fee
       const valFee = valFeeIn;
       let pool = cpfCapIn, loan = maxLoan, D = P - loan;
       const minCash = Math.min(D, minCashPct * base + cov);
@@ -1403,7 +1403,7 @@
           ${row("Buyer's Stamp Duty", money(f.BSD))}
           ${f.ABSDamt ? row("Additional Buyer's Stamp Duty", money(f.ABSDamt), 'hl', `${pct(c.absdRate, 0)}${c.absdRefund ? ' · refundable' : ''}`) : ''}
           ${row('Legal fees', money(c.legalBuy))}
-          ${c.fresh ? '' : row("Buyer's agent fee", money(f.agentBuy), '', '1% + 9% GST · cash')}
+          ${f.agentBuy ? row("Buyer's agent fee", money(f.agentBuy), '', '1% + 9% GST · cash') : ''}
           ${f.valFee ? row('Valuation fee', money(f.valFee)) : ''}
           ${f.miscBuy ? row('HDB resale and misc fees', money(f.miscBuy), '', 'Resale application $80 + misc $150') : ''}
           ${c.otherBuy ? row('Other costs', money(c.otherBuy)) : ''}
@@ -1445,7 +1445,7 @@
           ${row("Buyer's Stamp Duty", money(at.BSD), '', dutyTag(c))}
           ${at.ABSDamt ? row("Additional Buyer's Stamp Duty", money(at.ABSDamt), 'hl', `${pct(c.absdRate, 0)}${c.absdRefund ? ' · refundable' : ''}`) : ''}
           ${row('Legal fees', money(c.legalBuy), '', legalTag(c))}
-          ${c.fresh ? '' : row("Buyer's agent fee", money(at.agentBuy), '', '1% + 9% GST · cash only')}
+          ${at.agentBuy ? row("Buyer's agent fee", money(at.agentBuy), '', '1% + 9% GST · cash only') : ''}
           ${at.valFee ? row('Valuation fee', money(at.valFee), '', 'Cash only') : ''}
           ${at.miscBuy ? row('HDB resale and misc fees', money(at.miscBuy), '', 'Resale application $80 + misc $150 · cash') : ''}
           ${c.otherBuy ? row('Other costs', money(c.otherBuy), '', 'Cash only') : ''}
@@ -1652,7 +1652,7 @@
           ${L("Buyer's stamp duty", money(f.BSD))}
           ${f.ABSDamt ? L("Additional buyer's stamp duty", money(f.ABSDamt), '', `${pct(c.absdRate, 0)}${c.absdRefund ? ', refundable' : ''}`) : ''}
           ${L('Legal fees', money(c.legalBuy))}
-          ${c.fresh ? '' : L("Buyer's agent fee", money(f.agentBuy), '', '1% + 9% GST · cash')}
+          ${f.agentBuy ? L("Buyer's agent fee", money(f.agentBuy), '', '1% + 9% GST · cash') : ''}
           ${f.valFee ? L('Valuation fee', money(f.valFee)) : ''}
           ${f.miscBuy ? L('HDB resale and misc fees', money(f.miscBuy), '', 'resale application $80 + misc $150') : ''}
           ${c.otherBuy ? L('Other costs', money(c.otherBuy)) : ''}
@@ -1688,7 +1688,7 @@
       const g = c.gapInfo, need = c.shortfall > 0.5;
       const full = Math.floor(at.ltvLoan / 100) * 100;
       const lend = c.hdbLoan ? 'HDB loan' : 'Bank loan';
-      const feeNote = [`BSD ${money(at.BSD)}`, at.ABSDamt ? `ABSD ${money(at.ABSDamt)}` : '', `legal ${money(c.legalBuy)}`, c.fresh ? '' : `agent ${money(at.agentBuy)}`, at.miscBuy ? `HDB resale and misc ${money(at.miscBuy)}` : '', at.levy ? `levy ${money(at.levy)}` : ''].filter(Boolean).join(' · ');
+      const feeNote = [`BSD ${money(at.BSD)}`, at.ABSDamt ? `ABSD ${money(at.ABSDamt)}` : '', `legal ${money(c.legalBuy)}`, at.agentBuy ? `agent ${money(at.agentBuy)}` : '', at.miscBuy ? `HDB resale and misc ${money(at.miscBuy)}` : '', at.levy ? `levy ${money(at.levy)}` : ''].filter(Boolean).join(' · ');
       const ways = waysToClose(c);
       buy = sec(`Buying at ${money(at.P)} with a full ${pct(c.ltv, 0)} loan`, `
           ${L('Purchase price', money(at.P), '', at.cov ? `valuation ${money(at.V)}` : '')}
