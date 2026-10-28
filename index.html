@@ -304,6 +304,17 @@
   .tl-seg-in input[type=date]:disabled { opacity: .5; }
   .tl-seg.ext { background: var(--soft); border-radius: 10px; padding: 10px 12px; border-top: 0; margin-top: 4px; }
   .tl-side .switch-row { border-top: 1px dashed var(--line); }
+  .tl-bridge { margin-top: 14px; border: 1px solid var(--line); border-top: 4px solid var(--who); border-radius: 12px; padding: 4px 14px 14px; background: #fff; }
+  .tl-bridge > .switch-row { border-top: 0; }
+  .tl-bridge .grid2 { margin-top: 4px; }
+  .tl-br-out { margin-top: 4px; }
+  .tl-br-none { margin: 0; font-size: 13px; color: var(--muted); }
+  .tl-br-rows { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+  .tl-br-rows > div { padding: 10px 12px; border-radius: 10px; background: var(--who-soft); }
+  .tl-br-rows span { display: block; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--who); }
+  .tl-br-rows b { display: block; font-size: 18px; font-weight: 800; margin: 3px 0 1px; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .tl-br-rows small { display: block; font-size: 12px; color: var(--muted); }
+  .tl-br-warn { margin: 10px 0 0; padding: 8px 12px; border-radius: 8px; background: var(--gap-soft); color: var(--gap); font-size: 13px; }
   #report { display: none; }
   .theme-btn { min-width: 44px; padding-inline: 12px; font-size: 16px; line-height: 1; }
   .tips-btn { display: inline-flex; align-items: center; gap: 6px; }
@@ -405,6 +416,9 @@
     [data-theme="dark"] #tl-chart [stroke="#b3402e"] { stroke: #ff8b72; }
     [data-theme="dark"] #tl-chart [fill="#4a3d78"] { fill: #bcadff; }
     [data-theme="dark"] #tl-chart [stroke="#4a3d78"] { stroke: #bcadff; }
+    [data-theme="dark"] #tl-chart [fill="#233a4f"] { fill: #9fc3e6; }
+    [data-theme="dark"] #tl-chart [stroke="#233a4f"] { stroke: #9fc3e6; }
+    [data-theme="dark"] .tl-bridge { background: #151b18; }
   }
   /* Margin 0 stops the browser printing its own date, title and URL in the page margins. */
   @page { size: A4 portrait; margin: 0; }
@@ -524,6 +538,12 @@
     .tlr-gaps { display: flex; gap: 8px; margin-bottom: 8px; break-inside: avoid; }
     .tlr-gap { flex: 1; border: 1px solid var(--line); border-left: 4px solid var(--gap); border-radius: 8px; padding: 5px 10px; }
     .tlr-gap.e { border-left-color: var(--plum); }
+    .tlr-gap.b { border-left-color: var(--who); }
+    .tlr-bridge { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 8px; break-inside: avoid; }
+    .tlr-bridge > div { padding: 6px 10px; border-radius: 8px; background: var(--who-soft); }
+    .tlr-bridge small { display: block; color: var(--who); font-size: 8.5px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
+    .tlr-bridge b { display: block; font-size: 13px; margin: 1px 0; }
+    .tlr-bridge span { display: block; font-size: 8.5px; color: var(--muted); }
     .tlr-gap small { display: block; color: var(--muted); font-size: 8.5px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
     .tlr-gap b { font-size: 11.5px; }
     .tlr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; break-inside: avoid; }
@@ -656,11 +676,12 @@
   };
   const tlSegs = k => TL_TPL[k].segs.map(g => ({ v: g.v || '', unit: g.unit, basis: g.basis || 'cal' }));
   const tlSide = type => ({ on: true, type, start: isoToday(), segs: { hdb: tlSegs('hdb'), private: tlSegs('private'), buc: tlSegs('buc') }, ext: { on: false, v: '', unit: 'months', basis: 'cal' } });
-  const tlDefaults = () => ({ on: false, sale: tlSide('hdb'), purchase: tlSide('private') });
+  const tlDefaults = () => ({ on: false, sale: tlSide('hdb'), purchase: tlSide('private'), bridge: { on: false, amt: '', rate: '' } });
   const tlMerge = t => {
     const d = tlDefaults();
     if (!t) return d;
     d.on = !!t.on;
+    d.bridge = { ...d.bridge, ...(t.bridge || {}) };
     for (const k of ['sale', 'purchase']) {
       const x = t[k] || {};
       d[k] = { ...d[k], ...x, segs: { ...d[k].segs, ...(x.segs || {}) }, ext: { ...d[k].ext, ...(x.ext || {}) } };
@@ -1788,7 +1809,8 @@
     const EXT = 'End of extension';
     const DISC = 'The timeline and figures shown are for reference only. None of it represents the actual timeline of any transaction.';
     const SIDES = ['sale', 'purchase'];
-    const COL = { sale: '#0d5c50', purchase: '#a47a2c', gap: '#b3402e', ext: '#4a3d78' };
+    const COL = { sale: '#0d5c50', purchase: '#a47a2c', gap: '#b3402e', ext: '#4a3d78', bridge: '#233a4f' };
+    const BR_RATE = 5.0; // indicative: 2026 bridging rates run about 4–6% p.a., interest only
     const PRINT_W = 1400;
     // Singapore public holidays, Sunday holidays already moved to Monday. 2027 to be checked against MOM's list.
     const HOLIDAYS = new Set([
@@ -1858,11 +1880,26 @@
     }
     const onSides = () => S().on ? SIDES.filter(k => S()[k].on) : [];
 
+    // Bridging loan: the purchase completes first; the bank lends against the sale's cash proceeds until the sale completes.
+    const bridgeAvail = () => S().on && S().sale.on && S().purchase.on && S().purchase.type !== 'buc';
+    const bridgeSuggest = () => { const c = compute_(); return c.sale ? Math.max(0, Math.round(c.sale.clientCash)) : 0; };
+    function bridgeInfo(D) {
+      const B = S().bridge;
+      if (!B.on || !bridgeAvail() || !D.sale || !D.purchase || !D.sale.completion || !D.purchase.completion) return null;
+      const from = D.purchase.completion, to = D.sale.completion, days = dayDiff(from, to);
+      const amt = has(B.amt) ? num(B.amt) : bridgeSuggest(), rate = has(B.rate) ? num(B.rate) : BR_RATE;
+      return { from, to, days, amt, rate, monthly: amt * rate / 1200, total: amt * rate / 100 * Math.max(0, days) / 365,
+        over6: days > 0 && to > plusMonths(from, 6) };
+    }
     function gaps(D) {
       const out = [];
       if (!D.sale || !D.purchase || !D.purchase.key) return out;
       const pk = keyName('purchase');
-      if (D.sale.completion) {
+      const br = bridgeInfo(D);
+      if (br && br.days > 0) {
+        out.push({ cls: 'b', k: 'Bridging loan', days: br.days, from: br.to, to: br.from,
+          v: `Bridging loan for ${spanLabel(br.days)}, from purchase completion to sale completion` });
+      } else if (D.sale.completion) {
         const g = dayDiff(D.sale.completion, D.purchase.key);
         out.push({ cls: 'c', k: `Sale completion vs ${pk}`, days: g, from: D.sale.completion,
           v: g === 0 ? `Sale completes on the day of ${pk}` : `Sale completes ${spanLabel(g)} ${g > 0 ? 'before' : 'after'} ${pk}` });
@@ -1962,12 +1999,13 @@
 
       // gaps: from the sale's completion (or extension end) down to the purchase's completion or TOP
       for (const g of G) {
-        const col = g.cls === 'c' ? COL.gap : COL.ext, sx = x(g.from), px = x(D.purchase.key), yy = yGap[g.cls];
-        el('line', { x1: sx, x2: sx, y1: Y.sale + 8, y2: Y.purchase - 8, stroke: col, 'stroke-width': 1.5, 'stroke-dasharray': '5 5' });
+        const col = g.cls === 'c' ? COL.gap : g.cls === 'b' ? COL.bridge : COL.ext, sx = x(g.from), px = x(g.to || D.purchase.key), yy = yGap[g.cls];
+        const vx = g.cls === 'b' ? px : sx; // bridging starts at the purchase completion
+        el('line', { x1: vx, x2: vx, y1: Y.sale + 8, y2: Y.purchase - 8, stroke: col, 'stroke-width': 1.5, 'stroke-dasharray': '5 5' });
         if (!g.days) continue;
         el('line', { x1: sx, x2: px, y1: yy, y2: yy, stroke: col, 'stroke-width': 1.5 });
         for (const ex of [sx, px]) el('line', { x1: ex, x2: ex, y1: yy - 6, y2: yy + 6, stroke: col, 'stroke-width': 1.5 });
-        const lbl = (g.cls === 'e' ? 'Extension: ' : '') + spanLabel(g.days);
+        const lbl = (g.cls === 'e' ? 'Extension: ' : g.cls === 'b' ? 'Bridging loan: ' : '') + spanLabel(g.days);
         const w = textW(lbl, 13, 600) + 12;
         const cx = Math.min(Math.max((sx + px) / 2, w / 2 + 4), W - w / 2 - 4);
         el('rect', { x: cx - w / 2, y: yy - 21, width: w, height: 18, rx: 4, fill: '#fff' });
@@ -2029,6 +2067,31 @@
         ${s.ext.on ? `<div class="tl-seg ext"><div class="tl-seg-name">${esc(t.segs[t.segs.length - 1].to)}<i>→</i>${EXT}</div>${segRow(k, s.ext, 'data-ext')}</div>` : ''}
       </div>`;
     }
+    function bridgeHtml() {
+      if (!bridgeAvail()) return '';
+      const B = S().bridge, sug = bridgeSuggest();
+      return `<div class="tl-bridge">
+        ${toggle('tl.bridge.on', 'Bridging loan', 'The purchase completes before the sale. The bank lends against the sale proceeds until the sale completes.')}
+        ${B.on ? `<div class="grid2">
+          <label class="f"><span>Bridging loan amount</span><div class="money-in"><input type="text" inputmode="numeric" data-tl-br="amt" value="${has(B.amt) ? comma(B.amt) : ''}" placeholder="${sug ? comma(sug) : '0'}"></div>
+            <small>${sug ? 'Blank = the expected cash proceeds from the sale (section 1)' : 'Usually up to the expected cash proceeds from the sale'}</small></label>
+          <label class="f"><span>Interest rate</span><div class="unit-in"><input type="text" inputmode="decimal" data-tl-br="rate" value="${esc(B.rate || '')}" placeholder="${BR_RATE.toFixed(1)}"><i>%</i></div>
+            <small>Interest only. Rates run about 4–6% a year</small></label>
+        </div>
+        <div class="tl-br-out" id="tl-br-out"></div>` : ''}
+      </div>`;
+    }
+    function bridgeOut(br) {
+      if (!br) return '';
+      if (br.days <= 0) return '<p class="tl-br-none">The sale completes on or before the purchase completion, so no bridging loan is needed.</p>';
+      return `<div class="tl-br-rows">
+          <div><span>Bridging period</span><b>${spanLabel(br.days)}</b><small>${fmtDate(br.from)} to ${fmtDate(br.to)}</small></div>
+          <div><span>Monthly interest</span><b>${money(br.monthly)}</b><small>${money(br.amt)} at ${br.rate}% · paid in cash</small></div>
+          <div><span>Total interest</span><b>${money(br.total)}</b><small>Principal repaid from the sale proceeds</small></div>
+        </div>
+        ${br.over6 ? '<p class="tl-br-warn">Longer than 6 months. Most banks cap a bridging loan at about 6 months — check with the bank before relying on it.</p>' : ''}
+        <p class="fine" style="margin:8px 0 0">Indicative only. The bank decides the amount, rate and fees (often about 1% of the loan), and usually needs the buyer of the current home to have exercised the OTP first.</p>`;
+    }
     function render() {
       const el = document.getElementById('panel-tl'), T = S();
       el.classList.toggle('off', !T.on);
@@ -2039,6 +2102,7 @@
       el.innerHTML = `${head}
         <div class="tl-chart"><div class="tl-scroll"><svg id="tl-chart" role="img" aria-label="Sale and purchase timeline"></svg></div><div class="tl-sum" id="tl-sum"></div></div>
         <div class="tl-sides">${sideHtml('sale')}${sideHtml('purchase')}</div>
+        ${bridgeHtml()}
         <p class="disclaimer"><b>Disclaimer:</b> ${DISC}</p>
         <p class="note">Leave a box blank and that timeline stops at that step. Working days skip weekends and Singapore public holidays.</p>`;
       paint();
@@ -2055,6 +2119,8 @@
         if (D[k].extEnd) out.push(`${sideName(k)} extension ends <b>${fmtDate(D[k].extEnd)}</b>`);
       }
       gaps(D).forEach(g => out.push(`<b>${g.v}</b>`));
+      const br = bridgeInfo(D), bo = document.getElementById('tl-br-out');
+      if (bo) bo.innerHTML = bridgeOut(br) || '<p class="tl-br-none">Fill in both timelines up to completion to see the bridging period.</p>';
       document.getElementById('tl-sum').innerHTML = (out.length ? out : ['Fill in the steps below to build the timeline.']).map(x => `<span>${x}</span>`).join('');
     }
     function refresh() { save(); paint(); buildReport(compute_()); }
@@ -2102,6 +2168,7 @@
     document.addEventListener('input', e => {
       const t = e.target;
       if (t.dataset.tlStart) { state.tl[t.dataset.tlStart].start = validDate(t.value) ? t.value : isoToday(); return refresh(); }
+      if (t.dataset.tlBr) { const k = t.dataset.tlBr; state.tl.bridge[k] = k === 'amt' ? t.value.replace(/[^0-9]/g, '') : t.value.replace(/[^0-9.]/g, ''); return refresh(); }
       const row = t.closest('.tl-seg-in'), k = t.dataset.tlK;
       if (!row || !k) return;
       const s = state.tl[row.dataset.side];
@@ -2112,7 +2179,10 @@
       if (k === 'unit') { if (g.unit !== 'days') g.basis = 'cal'; save(); render(); return buildReport(compute_()); }
       refresh();
     });
-    document.addEventListener('focusout', e => { if (e.target.dataset && e.target.dataset.tlK === 'date') setTimeout(syncDates); });
+    document.addEventListener('focusout', e => {
+      if (e.target.dataset && e.target.dataset.tlK === 'date') setTimeout(syncDates);
+      if (e.target.dataset && e.target.dataset.tlBr === 'amt' && has(state.tl.bridge.amt)) e.target.value = comma(state.tl.bridge.amt);
+    });
     let rz;
     window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (document.getElementById('tl-chart')) paint(); }, 120); });
 
@@ -2135,11 +2205,17 @@
       const svg = document.createElementNS(NS, 'svg');
       draw(svg, PRINT_W);
       svg.setAttribute('class', 'tlr-svg');
-      const G = gaps(D);
+      const G = gaps(D), br = bridgeInfo(D);
+      const brRep = br && br.days > 0 ? `<div class="tlr-bridge"><div><small>Bridging loan</small><b>${money(br.amt)}</b><span>at ${br.rate}% a year, interest only</span></div>
+          <div><small>Period</small><b>${spanLabel(br.days)}</b><span>${fmtDate(br.from)} to ${fmtDate(br.to)}</span></div>
+          <div><small>Monthly interest</small><b>${money(br.monthly)}</b><span>paid in cash</span></div>
+          <div><small>Total interest</small><b>${money(br.total)}</b><span>principal repaid from the sale proceeds</span></div></div>
+        ${br.over6 ? '<p class="tlr-disc" style="color:#b3402e"><b>Longer than 6 months.</b> Most banks cap a bridging loan at about 6 months.</p>' : ''}` : '';
       return `<div class="tlr-chart">${svg.outerHTML}</div>
         ${G.length ? `<div class="tlr-gaps">${G.map(g => `<div class="tlr-gap ${g.cls}"><small>${g.k}</small><b>${g.v}</b></div>`).join('')}</div>` : ''}
+        ${brRep}
         <div class="tlr-grid n${sides.length}">${sides.map(k => card(k, D[k])).join('')}</div>
-        <p class="tlr-disc"><b>Disclaimer:</b> ${DISC} Working days exclude weekends and Singapore public holidays.</p>`;
+        <p class="tlr-disc"><b>Disclaimer:</b> ${DISC} Working days exclude weekends and Singapore public holidays.${br && br.days > 0 ? ' Bridging loan figures are indicative; the amount, rate, fees and approval are decided by the bank. Seek advice from a banker or mortgage broker.' : ''}</p>`;
     }
     const tag = () => onSides().map(k => `${sideName(k)}: ${tpl(k).label}`).join(' · ');
     const tlTitle = () => { const o = onSides(); return o.length === 1 ? `${sideName(o[0])} timeline` : 'Sale &amp; purchase timeline'; };
