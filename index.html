@@ -696,9 +696,9 @@
   const defaults = () => ({
     n: 1, married: true, withKids: false, clientName: '', whoOn: true, loanOn: true,
     b: [blankBuyer(), blankBuyer()],
-    buy: { on: true, type: 'private', mode: 'resale', price: '', val: '', lease: '', loan: 'bank', rate: '2.0', stress: '4.0', tenure: '', grants: '', keep: '', legal: null, hdbLegal: false, valFee: null, other: '', levyOn: false, levyType: '4', levySingle: false, levy: null, grantPHG: false, cashUse: '' },
+    buy: { on: true, agentOn: false, type: 'private', mode: 'resale', price: '', val: '', lease: '', loan: 'bank', rate: '2.0', stress: '4.0', tenure: '', grants: '', keep: '', legal: null, hdbLegal: false, valFee: null, other: '', levyOn: false, levyType: '4', levySingle: false, levy: null, grantPHG: false, cashUse: '' },
     tl: tlDefaults(),
-    sale: { on: false, type: 'hdb', owners: 1, owner: '0', price: '', loan: '', cpf: [{ p: '', i: '' }, { p: '', i: '' }], first: true, repaid: true, hdb2nd: true, contra: true, bought: '', legal: null, hdbLegal: false, penalty: '', share: '', coOwner: false },
+    sale: { on: false, agentOn: false, type: 'hdb', owners: 1, owner: '0', price: '', loan: '', cpf: [{ p: '', i: '' }, { p: '', i: '' }], first: true, repaid: true, hdb2nd: true, contra: true, bought: '', legal: null, hdbLegal: false, penalty: '', share: '', coOwner: false },
   });
   let state;
   try {
@@ -883,7 +883,7 @@
           ${moneyField('sale.legal', 'Legal fees', { value: s.legal ?? saleLegalDefault() })}
           ${moneyField('sale.penalty', 'Bank penalty', { hint: 'Lock-in or clawback' })}
         </div>
-        <p class="fine">Seller's agent fee: 2% + GST.</p>
+        ${toggle('sale.agentOn', "Seller's agent fee", '2% + GST, paid in cash')}
       </div>
       <div class="block">
         <p class="block-title">Timing</p>
@@ -925,7 +925,7 @@
           ${fresh ? '' : moneyField('buy.valFee', 'Valuation fee', { value: s.valFee ?? VAL_FEE })}
           ${moneyField('buy.other', 'Other costs', { full: !fresh, hint: 'Renovation, furniture, moving' })}
         </div>
-        <p class="fine">${hdb ? "Buyer's agent fee: 1% + GST." : "No buyer's agent fee on a private purchase."}</p>
+        ${fresh ? '' : toggle('buy.agentOn', "Buyer's agent fee", '1% + GST, paid in cash')}
       </div>
       ${roughMode ? `<div class="block">
         <p class="block-title">Loan</p>
@@ -1023,7 +1023,7 @@
       const backBy = owedBy.map(o => o * scale);
       const coBack = coOwed * scale;
       const cpfBack = sum(backBy);
-      const agent = price * AGENT_SALE * (1 + GST);
+      const agent = sl.agentOn ? price * AGENT_SALE * (1 + GST) : 0;
       const legal = sl.legal != null ? num(sl.legal) : saleLegalDefault();
       let ssd = 0, ssdRate = 0, ssdNote = '';
       if (sl.type === 'private' && sl.bought) {
@@ -1144,7 +1144,7 @@
       const maxLoan = Math.floor(Math.min(ltvLoan, incomeLoan) / 100) * 100;
       const dutyBase = Math.max(P, V);
       const BSD = bsd(dutyBase), ABSDamt = Math.round(dutyBase * absdRate);
-      const agentBuy = hdb ? P * AGENT_BUY * (1 + GST) : 0; // private buyers usually pay no agent fee
+      const agentBuy = s.agentOn && !fresh ? P * AGENT_BUY * (1 + GST) : 0; // switch in Purchase → Fees
       const valFee = valFeeIn;
       let pool = cpfCapIn, loan = maxLoan, D = P - loan;
       const minCash = Math.min(D, minCashPct * base + cov);
@@ -1333,7 +1333,7 @@
         <table class="rows">
           ${row('Selling price', money(s.price))}
           ${row('Less loan and CPF refund', money(-(s.loan + s.cpfBackAll)), '', `Loan ${money(s.loan)} · CPF ${money(s.cpfBack)}${s.coOwner ? ` + co-owner ${money(s.coBack)}` : ''}`)}
-          ${row('Less agent, legal and misc fees', money(-(s.agent + s.legal + s.ssd + s.penalty + s.misc)), '', [`Agent 2% + GST ${money(s.agent)}`, `legal ${money(s.legal)}`, s.misc ? `HDB resale and misc ${money(s.misc)}` : '', s.ssd ? `SSD ${money(s.ssd)}` : '', s.penalty ? `bank penalty ${money(s.penalty)}` : ''].filter(Boolean).join(' · '))}
+          ${row(s.agent ? 'Less agent, legal and misc fees' : 'Less legal and misc fees', money(-(s.agent + s.legal + s.ssd + s.penalty + s.misc)), '', [s.agent ? `Agent 2% + GST ${money(s.agent)}` : '', `legal ${money(s.legal)}`, s.misc ? `HDB resale and misc ${money(s.misc)}` : '', s.ssd ? `SSD ${money(s.ssd)}` : '', s.penalty ? `bank penalty ${money(s.penalty)}` : ''].filter(Boolean).join(' · '))}
           ${s.share != null ? row('Cash proceeds', money(s.cash), 'total') : ''}
           ${row(s.share != null ? (s.shareTyped ? "Cash to client (her share)" : "Cash to client (half)") : 'Cash proceeds', money(s.clientCash), 'total', s.rule50 && s.mustUse > 0 ? `${money(s.mustUse)} must go into the next flat (2nd HDB loan)` : '')}
           ${row('CPF available for next home', money(c.poolStart), 'total', `Incl. ${money(s.cpfBack)} refunded from the sale`)}
@@ -1345,7 +1345,7 @@
           ${row('CPF refund to OA', money(-s.cpfBackAll), '', s.shortCPF > 0.5 ? `Of ${money(s.owed + s.coOwed)} owed — no top-up needed` : 'Principal + accrued interest')}
           ${s.coOwner ? row("Co-owner's CPF refund", money(-s.coBack), 'minor', 'To their own OA — not for the client') : ''}
           ${cpfRows}
-          ${row("Seller's agent fee", money(-s.agent), '', '2% + 9% GST · cash')}
+          ${s.agent ? row("Seller's agent fee", money(-s.agent), '', '2% + 9% GST · cash') : ''}
           ${row('Legal fees', money(-s.legal), '', 'Cash only — CPF cannot pay sale fees')}
           ${s.misc ? row('HDB resale and misc fees', money(-s.misc), '', 'Resale application $80 + misc $150 (caveat, admin)') : ''}
           ${s.ssd ? row("Seller's Stamp Duty", money(-s.ssd), 'hl', s.ssdNote) : ''}
@@ -1672,8 +1672,7 @@
           ${gap}
           ${L("Buyer's stamp duty", money(f.BSD))}
           ${f.ABSDamt ? L("Additional buyer's stamp duty", money(f.ABSDamt), '', `${pct(c.absdRate, 0)}${c.absdRefund ? ', refundable' : ''}`) : ''}
-          ${L('Legal fees', money(c.legalBuy))}
-          ${f.agentBuy ? L("Buyer's agent fee", money(f.agentBuy), '', '1% + 9% GST · cash') : ''}
+          ${L('Legal and professional fees', money(c.legalBuy + f.agentBuy))}
           ${f.valFee ? L('Valuation fee', money(f.valFee)) : ''}
           ${f.miscBuy ? L('HDB resale and misc fees', money(f.miscBuy), '', 'resale application $80 + misc $150') : ''}
           ${c.otherBuy ? L('Other costs', money(c.otherBuy)) : ''}
@@ -1687,13 +1686,13 @@
     let sale = '';
     if (s) {
       const fees = s.agent + s.legal + s.ssd + s.penalty + s.misc;
-      const feeNote = [`agent ${money(s.agent)}`, `legal ${money(s.legal)}`, s.misc ? `HDB resale and misc ${money(s.misc)}` : '', s.ssd ? `SSD ${money(s.ssd)}` : '', s.penalty ? `bank ${money(s.penalty)}` : ''].filter(Boolean).join(' · ');
+      const feeNote = [`professional fees ${money(s.agent + s.legal)}`, s.misc ? `HDB resale and misc ${money(s.misc)}` : '', s.ssd ? `SSD ${money(s.ssd)}` : '', s.penalty ? `bank ${money(s.penalty)}` : ''].filter(Boolean).join(' · ');
       const cpfNote = s.coOwner ? `client ${money(s.cpfBack)} · co-owner ${money(s.coBack)}` : c.owners.length > 1 ? c.owners.map(i => `Buyer ${i + 1} ${money(s.backBy[i])}`).join(' · ') : 'principal + accrued interest';
       sale = sec('Proceeds from the sale', `
         ${L('Selling price', money(s.price))}
         ${L('Less outstanding loan', neg(s.loan))}
         ${L('Less CPF refund to OA', neg(s.cpfBackAll), '', cpfNote)}
-        ${L('Less agent, legal and misc fees', neg(fees), '', feeNote)}
+        ${L('Less selling fees', neg(fees), '', feeNote)}
         ${L('Cash proceeds', money(s.cash), 'tot big')}
         ${s.share != null ? L("Client's share", money(s.share), 'sub', s.shareTyped ? 'divorce or co-owner split' : 'half — co-owner gets the other half') : ''}
         ${s.rule50 && s.mustUse > 0 ? L('Must go into the next flat', money(s.mustUse), 'sub', `2nd HDB loan rule · client keeps ${money(s.keepCash)}`) : ''}
@@ -1709,7 +1708,7 @@
       const g = c.gapInfo, need = c.shortfall > 0.5;
       const full = Math.floor(at.ltvLoan / 100) * 100;
       const lend = c.hdbLoan ? 'HDB loan' : 'Bank loan';
-      const feeNote = [`BSD ${money(at.BSD)}`, at.ABSDamt ? `ABSD ${money(at.ABSDamt)}` : '', `legal ${money(c.legalBuy)}`, at.agentBuy ? `agent ${money(at.agentBuy)}` : '', at.miscBuy ? `HDB resale and misc ${money(at.miscBuy)}` : '', at.levy ? `levy ${money(at.levy)}` : ''].filter(Boolean).join(' · ');
+      const feeNote = [`BSD ${money(at.BSD)}`, at.ABSDamt ? `ABSD ${money(at.ABSDamt)}` : '', `legal and professional ${money(c.legalBuy + at.agentBuy)}`, at.miscBuy ? `HDB resale and misc ${money(at.miscBuy)}` : '', at.levy ? `levy ${money(at.levy)}` : ''].filter(Boolean).join(' · ');
       const ways = waysToClose(c);
       buy = sec(`Buying at ${money(at.P)} with a full ${pct(c.ltv, 0)} loan`, `
           ${L('Purchase price', money(at.P), '', at.cov ? `valuation ${money(at.V)}` : '')}
