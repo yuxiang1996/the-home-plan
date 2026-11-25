@@ -1527,14 +1527,21 @@
   function waysToClose(c) {
     const g = c.gapInfo;
     if (!c.at || !g || g.loanGap <= 0) return [];
-    if (c.hdbLoan) return ['A <b>bank loan</b> is assessed on TDSR 55% instead of MSR 30% and may lend more. Check with a banker or mortgage broker.'];
+    // HDB flats and new ECs: MSR 30% caps HDB and bank loans alike, so switching lender is not a way out.
+    if (c.hdbLoan) return [
+      '<b>Declare all eligible income</b>, such as commission or rental income, if not already counted. HDB counts part of it. Check with HDB on what they accept.',
+      ...(c.otherProp ? ['<b>Pay down other home loans</b> before applying. They count against the 30% MSR limit.'] : []),
+      '<b>Add a co-applicant</b> with income, such as a parent, subject to HDB eligibility rules.',
+    ];
     return [
       '<b>Pledging or showing funds:</b> check with a banker or mortgage broker whether pledging, or showing (unpledged) cash or eligible assets, can raise the loan.',
       '<b>Include variable income</b> such as bonuses, commission or rental income, if not already counted. Banks count part of it, so the loan is likely to go up. Check with a banker on what they accept.',
-      ...(c.otherDebt ? ['<b>Clear other monthly debts</b> such as car loans or credit cards before applying. Less debt leaves more room for the home loan.'] : []),
+      ...(c.otherDebt && c.incomeRule === 'TDSR' ? ['<b>Clear other monthly debts</b> such as car loans or credit cards before applying. Less debt leaves more room for the home loan.'] : []),
+      ...(c.otherProp && c.incomeRule === 'MSR' ? ['<b>Pay down other home loans</b> before applying. They count against the 30% MSR limit.'] : []),
       '<b>Add a co-borrower</b> with income, such as a parent or sibling. Check ABSD and the effect on loan tenure first.',
     ];
   }
+
   // New launch: the Progressive Payment Scheme. Legal steps are dated from the OTP; construction stages are spread
   // between the OTP and the expected TOP, so those dates are rough. The client pays the downpayment stages first,
   // then the bank disburses the rest — instalments grow with each disbursement.
