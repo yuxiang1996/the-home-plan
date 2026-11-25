@@ -698,7 +698,7 @@
     b: [blankBuyer(), blankBuyer()],
     buy: { on: true, agentOn: false, type: 'private', mode: 'resale', price: '', val: '', lease: '', loan: 'bank', rate: '2.0', stress: '4.0', tenure: '', grants: '', keep: '', legal: null, hdbLegal: false, valFee: null, other: '', levyOn: false, levyType: '4', levySingle: false, levy: null, grantPHG: false, cashUse: '' },
     tl: tlDefaults(),
-    sale: { on: false, agentOn: false, type: 'hdb', owners: 1, owner: '0', price: '', loan: '', cpf: [{ p: '', i: '' }, { p: '', i: '' }], first: true, repaid: true, hdb2nd: true, contra: true, bought: '', legal: null, hdbLegal: false, penalty: '', share: '', coOwner: false },
+    sale: { on: false, agentOn: false, cpfNext: '', type: 'hdb', owners: 1, owner: '0', price: '', loan: '', cpf: [{ p: '', i: '' }, { p: '', i: '' }], first: true, repaid: true, hdb2nd: true, contra: true, bought: '', legal: null, hdbLegal: false, penalty: '', share: '', coOwner: false },
   });
   let state;
   try {
@@ -871,6 +871,7 @@
         ${moneyField('sale.price', 'Selling price')}
         ${moneyField('sale.loan', 'Outstanding loan')}
         ${cpfFields}
+        ${moneyField('sale.cpfNext', 'CPF usable for next home', { full: true, ph: 'Same as the refund', hint: 'Optional. Type it if part of the refund goes elsewhere (e.g. MediSave or SA). The sale figures stay the same' })}
         ${moneyField('sale.share', "Client's share of cash proceeds", { full: true, ph: two && s.coOwner ? 'Half' : 'All of it', hint: two && s.coOwner ? 'Blank = half. Type the actual split from the settlement or court order' : 'Only if she receives part of the cash. Blank = all' })}
         ${s.type === 'private' ? `<label class="f full"><span>Date bought (OTP exercised)</span>
           <input type="date" data-path="sale.bought" value="${esc(s.bought)}" max="${isoToday()}"><small>For Seller's Stamp Duty</small></label>` : ''}
@@ -1113,8 +1114,11 @@
     const oaBy = B.map(b => num(b.oa));
     const oaTotal = sum(oaBy);
     const grants = hdb ? num(s.grants) : 0;
-    const cpfBack = sale ? sale.cpfBack : 0;
-    const poolStart = oaTotal + cpfBack + grants;
+    // CPF usable for the next home: blank = the whole refund. Typed when part of it goes elsewhere (MediSave, SA, RA);
+    // the sale itself still deducts the full refund.
+    const cpfNextIn = sale && has(sl.cpfNext) ? num(sl.cpfNext) : null;
+    const cpfToNext = sale ? (cpfNextIn ?? sale.cpfBack) : 0;
+    const poolStart = oaTotal + cpfToNext + grants;
     // CPF the buyer chooses to use (blank = all of it). An HDB loan lets each buyer keep at most $20,000.
     const cpfMin = hdbLoan ? Math.max(0, poolStart - OA_KEEP_HDB * state.n) : 0;
     const cpfUseIn = has(s.cpfUse) ? num(s.cpfUse) : null;
@@ -1150,7 +1154,7 @@
       const minCash = Math.min(D, minCashPct * base + cov);
       const cpfCap = base * leaseFactor;
       const cpfPayable = BSD + ABSDamt + legalBuy;
-      const feeCap = hdbLoan && sale && sl.contra ? Math.max(0, Math.min(cpfCapIn, poolStart - sale.cpfBack)) : cpfCapIn;
+      const feeCap = hdbLoan && sale && sl.contra ? Math.max(0, Math.min(cpfCapIn, poolStart - cpfToNext)) : cpfCapIn;
       let cpfDown = 0, cpfFees = 0, hdbCut = 0, cashCut = 0;
       if (hdbLoan) {
         cpfDown = Math.max(0, Math.min(D, cpfCap, pool));
@@ -1168,7 +1172,7 @@
         }
         // Any CPF still left (only when the loan is fully cut) can pay stamp duty and legal fees —
         // on a same-day move, not from the sale's refund.
-        const feeRoom = sale && sl.contra ? Math.max(0, Math.min(pool, poolStart - sale.cpfBack)) : pool;
+        const feeRoom = sale && sl.contra ? Math.max(0, Math.min(pool, poolStart - cpfToNext)) : pool;
         cpfFees = Math.min(pool, cpfPayable, feeRoom);
         pool -= cpfFees;
       } else {
@@ -1300,7 +1304,7 @@
     }
     return { whoOn, loanOn, B, hdb, ec, hdbLoan, fresh, iwaa, youngest, agesKnown, income, grossTotal, tenure, autoTenure, tenureHint, cap75, capMax, lowTier,
       ltv, minCashPct, stress, rate, incomeLoan, incomeLoanR, incomeRule, assessed, tdsrRoom, msrRoom, allowance, useMSR, loansOut, leaseFactor, absdRate, absdNote, absdRefund,
-      gapInfo, levy, levyAuto, cashDefault, cashFloor, cashUseIn, downCap, oaBy, oaTotal, grants, keep, poolStart, cpfMin, cpfUseIn, cpfLimit, savings, saleCash, cashAvail, legalBuy, otherBuy, owners,
+      gapInfo, levy, levyAuto, cashDefault, cashFloor, cashUseIn, downCap, oaBy, oaTotal, grants, keep, poolStart, cpfNextIn, cpfToNext, cpfMin, cpfUseIn, cpfLimit, savings, saleCash, cashAvail, legalBuy, otherBuy, owners,
       at, budget, topUp, shortfall, deposit, depositLbl, dutyUpfront, upfront, inst, instStress, tdsrUsed, msrUsed, otherDebt, otherProp, sale, flags };
   }
 
@@ -1328,7 +1332,9 @@
     if (c.sale) {
       const s = c.sale, split = c.owners.length > 1;
       const cpfRows = split ? c.owners.map(i => row(`Buyer ${i + 1} CPF refund`, money(-s.backBy[i]), 'minor', s.owedBy[i] - s.backBy[i] > 0.5 ? `Of ${money(s.owedBy[i])} owed` : '')).join('') : '';
-      const nextRows = c.B.map((b, i) => row(`Buyer ${i + 1}`, money(c.oaBy[i] + (s.backBy[i] || 0)), '', `OA ${money(c.oaBy[i])} + refund ${money(s.backBy[i] || 0)}`)).join('');
+      const nextRows = c.cpfNextIn != null
+        ? c.B.map((b, i) => row(`Buyer ${i + 1} current OA`, money(c.oaBy[i]))).join('') + row('Refund usable for next home', money(c.cpfNextIn), '', `Typed in · refund ${money(s.cpfBack)}`)
+        : c.B.map((b, i) => row(`Buyer ${i + 1}`, money(c.oaBy[i] + (s.backBy[i] || 0)), '', `OA ${money(c.oaBy[i])} + refund ${money(s.backBy[i] || 0)}`)).join('');
       html += `<div class="card proceeds"><div class="card-head"><span>Sale proceeds</span><em>${state.sale.type === 'hdb' ? 'HDB' : 'Private'} · ${money(s.price)}</em><button type="button" class="card-export" data-export="sale" title="Export this section as a PDF">Export</button></div>
         <table class="rows">
           ${row('Selling price', money(s.price))}
@@ -1336,7 +1342,10 @@
           ${row(s.agent ? 'Less agent, legal and misc fees' : 'Less legal and misc fees', money(-(s.agent + s.legal + s.ssd + s.penalty + s.misc)), '', [s.agent ? `Agent 2% + GST ${money(s.agent)}` : '', `legal ${money(s.legal)}`, s.misc ? `HDB resale and misc ${money(s.misc)}` : '', s.ssd ? `SSD ${money(s.ssd)}` : '', s.penalty ? `bank penalty ${money(s.penalty)}` : ''].filter(Boolean).join(' · '))}
           ${s.share != null ? row('Cash proceeds', money(s.cash), 'total') : ''}
           ${row(s.share != null ? (s.shareTyped ? "Cash to client (her share)" : "Cash to client (half)") : 'Cash proceeds', money(s.clientCash), 'total', s.rule50 && s.mustUse > 0 ? `${money(s.mustUse)} must go into the next flat (2nd HDB loan)` : '')}
-          ${row('CPF available for next home', money(c.poolStart), 'total', `Incl. ${money(s.cpfBack)} refunded from the sale`)}
+          ${row('CPF to be refunded', money(s.cpfBack), 'total', 'Principal + accrued interest, back to OA')}
+          ${c.cpfNextIn != null ? row('CPF usable for next home', money(c.cpfNextIn), 'total') : ''}
+          ${c.oaTotal ? row('Current CPF OA', money(c.oaTotal), 'minor') : ''}
+          ${c.grants ? row('CPF housing grants', money(c.grants), 'minor') : ''}
           ${row('Total for next home', money(Math.max(0, s.clientCash) + c.poolStart), 'total grand', `Cash ${money(Math.max(0, s.clientCash))} + CPF ${money(c.poolStart)}`)}
         </table>
         ${more('sale', `
@@ -1698,7 +1707,10 @@
         ${s.rule50 && s.mustUse > 0 ? L('Must go into the next flat', money(s.mustUse), 'sub', `2nd HDB loan rule · client keeps ${money(s.keepCash)}`) : ''}
         ${gap}
         ${L('Cash to client', money(Math.max(0, s.clientCash)))}
-        ${L('CPF available for next home', money(c.poolStart), '', `incl. ${money(s.cpfBack)} refunded from the sale`)}
+        ${L('CPF to be refunded', money(s.cpfBack), '', 'principal + accrued interest, back to OA')}
+        ${c.cpfNextIn != null ? L('CPF usable for next home', money(c.cpfNextIn)) : ''}
+        ${c.oaTotal ? L('Current CPF OA', money(c.oaTotal)) : ''}
+        ${c.grants ? L('CPF housing grants', money(c.grants)) : ''}
         ${L('Total for next home', money(Math.max(0, s.clientCash) + c.poolStart), 'tot big good')}`);
     }
 
